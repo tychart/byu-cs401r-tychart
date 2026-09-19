@@ -1,0 +1,49 @@
+flowchart LR
+  subgraph Arch["NorthStar Dev AI Platform — Architecture Reference"]
+    Internet["Internet"]
+    IAM["IAM Role: northstar-dev-MLEngineer"]
+
+    subgraph Region["Region: us-east-1"]
+      ECR["ECR (regional service)"]
+
+      subgraph VPC["VPC: northstar-dev-vpc<br/>CIDR: 10.0.0.0/16<br/>DNS hostnames: enabled<br/>DNS resolution: enabled"]
+        IGW["Internet Gateway: northstar-dev-igw"]
+
+        subgraph AZ["Availability Zone: us-east-1a"]
+          subgraph PublicSubnet["Public Subnet: northstar-dev-public-1<br/>CIDR: 10.0.100.0/24<br/>Public IP on launch: yes"]
+            RouteTable["Route Table: northstar-dev-public-rt<br/>Route: 0.0.0.0/0 → IGW"]
+            SageMakerDomain["SageMaker Domain: northstar-dev-domain"]
+            SecurityGroup["Security Group: northstar-dev-sagemaker-sg"]
+            Studio["SageMaker Studio (User Profile: MLEngineer)"]
+          end
+        end
+      end
+
+      subgraph S3["S3 Bucket: northstar-dev-data-{account-id}"]
+        Raw["raw/"]
+        Processed["processed/"]
+        Features["features/"]
+        Artifacts["artifacts/"]
+      end
+    end
+
+    SageMakerDomain -->|enforces| SecurityGroup
+    Internet -->|public traffic| IGW
+    Studio -->|assumes| IAM
+    IGW -->|routes| RouteTable
+    IAM -->|pull images| ECR
+    IAM -->|read/write| Features
+    IAM -->|read/write| Artifacts
+  end
+
+  subgraph Legend["AWS LEGEND — LAB 1"]
+    LegendKey["Line key:<br/>Solid = resource boundary<br/>Dashed = Region / AZ<br/>Colored outline = VPC / subnet"]
+    LegendECR["Amazon ECR<br/>container images"]
+    LegendS3["S3 prefixes<br/>raw / processed<br/>features / artifacts"]
+    LegendBoundary["VPC / AZ / Subnet<br/>AWS boundary icons"]
+    LegendIGW["Internet Gateway<br/>northstar-dev-igw"]
+    LegendRoute["Route Table<br/>northstar-dev-public-rt"]
+    LegendSageMaker["SageMaker<br/>Domain / Studio"]
+    LegendSG["Security Group<br/>northstar-dev-sagemaker-sg"]
+    LegendIAM["IAM Role<br/>northstar-dev-MLEngineer"]
+  end
