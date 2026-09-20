@@ -35,3 +35,9 @@ variable "security_group_ids" {
   description = "Security groups attached to Studio apps inside the VPC"
   type        = list(string)
 }
+
+variable "user_profile_name" {
+  description = "Name of the Studio user profile created in the Domain"
+  type        = string
+  default     = "MLEngineer"
+}

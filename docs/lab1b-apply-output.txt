@@ -1,0 +1,98 @@
+
+Warning: Deprecated Parameter
+
+The parameter "dynamodb_table" is deprecated. Use parameter "use_lockfile"
+instead.
+data.aws_caller_identity.current: Reading...
+module.iam.data.aws_iam_policy_document.assume_role: Reading...
+module.vpc.aws_vpc.this: Refreshing state... [id=vpc-08e7f81b113bed821]
+module.iam.data.aws_iam_policy_document.ml_engineer: Reading...
+module.iam.data.aws_iam_policy_document.assume_role: Read complete after 0s [id=286244903]
+module.iam.aws_iam_role.ml_engineer: Refreshing state... [id=northstar-dev-MLEngineer]
+module.iam.data.aws_iam_policy_document.ml_engineer: Read complete after 0s [id=2367981493]
+module.iam.aws_iam_policy.ml_engineer: Refreshing state... [id=arn:aws:iam::345594594463:policy/northstar-dev-MLEngineerPolicy]
+data.aws_caller_identity.current: Read complete after 0s [id=345594594463]
+module.storage.aws_s3_bucket.data: Refreshing state... [id=northstar-dev-data-345594594463]
+module.iam.aws_iam_role_policy_attachment.ml_engineer: Refreshing state... [id=northstar-dev-MLEngineer-20260920054114252700000001]
+module.vpc.aws_internet_gateway.this: Refreshing state... [id=igw-0b92a06170a094f6f]
+module.vpc.aws_subnet.public: Refreshing state... [id=subnet-01fdd169efc9b5ada]
+module.vpc.aws_security_group.this: Refreshing state... [id=sg-03b76cd91b60abe0f]
+module.vpc.aws_route_table.public: Refreshing state... [id=rtb-0c79aa8415d274fd3]
+module.storage.aws_s3_bucket_versioning.data: Refreshing state... [id=northstar-dev-data-345594594463]
+module.storage.aws_s3_bucket_public_access_block.data: Refreshing state... [id=northstar-dev-data-345594594463]
+module.storage.aws_s3_bucket_server_side_encryption_configuration.data: Refreshing state... [id=northstar-dev-data-345594594463]
+module.storage.aws_s3_object.prefix["artifacts/"]: Refreshing state... [id=artifacts/]
+module.storage.aws_s3_object.prefix["processed/"]: Refreshing state... [id=processed/]
+module.storage.aws_s3_object.prefix["raw/"]: Refreshing state... [id=raw/]
+module.storage.aws_s3_object.prefix["features/"]: Refreshing state... [id=features/]
+module.vpc.aws_route_table_association.public: Refreshing state... [id=rtbassoc-0d919e8dddee2fffd]
+module.sagemaker.aws_sagemaker_domain.this: Refreshing state... [id=d-mwoiwtbxzkbi]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+  ~ update in-place
+
+Terraform will perform the following actions:
+
+  # module.sagemaker.aws_sagemaker_domain.this will be updated in-place
+  ~ resource "aws_sagemaker_domain" "this" {
+        id                                             = "d-mwoiwtbxzkbi"
+        tags                                           = {
+            "Name" = "northstar-dev-domain"
+        }
+        # (15 unchanged attributes hidden)
+
+      ~ default_user_settings {
+            # (5 unchanged attributes hidden)
+
+          - studio_web_portal_settings {}
+
+            # (3 unchanged blocks hidden)
+        }
+    }
+
+  # module.sagemaker.aws_sagemaker_user_profile.ml_engineer will be created
+  + resource "aws_sagemaker_user_profile" "ml_engineer" {
+      + arn                      = (known after apply)
+      + domain_id                = "d-mwoiwtbxzkbi"
+      + home_efs_file_system_uid = (known after apply)
+      + id                       = (known after apply)
+      + tags                     = {
+          + "Name" = "northstar-dev-MLEngineer"
+        }
+      + tags_all                 = {
+          + "Environment" = "dev"
+          + "ManagedBy"   = "terraform"
+          + "Name"        = "northstar-dev-MLEngineer"
+          + "Project"     = "northstar"
+        }
+      + user_profile_name        = "MLEngineer"
+
+      + user_settings {
+          + auto_mount_home_efs = (known after apply)
+          + execution_role      = "arn:aws:iam::345594594463:role/northstar-dev-MLEngineer"
+          + security_groups     = [
+              + "sg-03b76cd91b60abe0f",
+            ]
+          + studio_web_portal   = (known after apply)
+
+          + space_storage_settings (known after apply)
+        }
+    }
+
+Plan: 1 to add, 1 to change, 0 to destroy.
+module.sagemaker.aws_sagemaker_domain.this: Modifying... [id=d-mwoiwtbxzkbi]
+module.sagemaker.aws_sagemaker_domain.this: Modifications complete after 1s [id=d-mwoiwtbxzkbi]
+module.sagemaker.aws_sagemaker_user_profile.ml_engineer: Creating...
+module.sagemaker.aws_sagemaker_user_profile.ml_engineer: Creation complete after 7s [id=arn:aws:sagemaker:us-east-1:345594594463:user-profile/d-mwoiwtbxzkbi/MLEngineer]
+
+Apply complete! Resources: 1 added, 1 changed, 0 destroyed.
+
+Outputs:
+
+ml_engineer_role_arn = "arn:aws:iam::345594594463:role/northstar-dev-MLEngineer"
+public_subnet_id = "subnet-01fdd169efc9b5ada"
+s3_bucket_name = "northstar-dev-data-345594594463"
+sagemaker_domain_id = "d-mwoiwtbxzkbi"
+vpc_id = "vpc-08e7f81b113bed821"

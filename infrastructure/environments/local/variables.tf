@@ -5,7 +5,7 @@ variable "project" {
 }
 
 variable "environment" {
-  description = "Deployment environment — fixed to local so names never collide with dev"
+  description = "Deployment environment - fixed to local so names never collide with dev"
   type        = string
   default     = "local"
 }
