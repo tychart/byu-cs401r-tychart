@@ -6,6 +6,13 @@
 #   make local-destroy    tear the LocalStack stack down
 #   make local-clean      also drop local state and LocalStack data
 
+# The recipe uses `set -o pipefail`, which is a bashism.
+SHELL := /bin/bash
+
+# Prefer Docker, fall back to Podman. Either works; whichever is installed on
+# the machine running `make` is the one that gets used.
+COMPOSE ?= $(shell command -v docker >/dev/null 2>&1 && echo "docker compose" || echo "podman compose")
+
 INFRA_DIR   ?= infrastructure
 LOCAL_ENV    = $(INFRA_DIR)/environments/local
 LOCAL_OUT    = docs/lab1b-localstack-output.txt
@@ -14,9 +21,11 @@ BUCKET       = northstar-local-data-000000000000
 .PHONY: local-validate local-destroy local-clean
 
 local-validate:
-	@podman compose up -d --wait
+	@$(COMPOSE) up -d --wait
 	@mkdir -p docs
-	@set -e; { \
+	@set -euo pipefail; \
+	export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_DEFAULT_REGION=us-east-1; \
+	{ \
 	  echo "== NorthStar Lab 1 — LocalStack validation =="; \
 	  echo "date: $$(date -u +%Y-%m-%dT%H:%M:%SZ)"; \
 	  echo; \
@@ -48,5 +57,5 @@ local-destroy:
 	terraform -chdir=$(LOCAL_ENV) destroy -auto-approve -input=false
 
 local-clean: local-destroy
-	podman compose down
+	$(COMPOSE) down
 	rm -rf $(LOCAL_ENV)/.terraform $(LOCAL_ENV)/terraform.tfstate* .localstack
