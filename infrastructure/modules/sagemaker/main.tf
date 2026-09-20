@@ -65,19 +65,40 @@ resource "aws_sagemaker_domain" "this" {
     studio_web_portal_settings {}
   }
 
-  # Studio creates an EFS filesystem for home directories that Terraform never
-  # sees. Without this, the default (Retain) leaves the filesystem (and its
-  # mount target, which pins the subnet) behind on destroy, and `terraform
-  # destroy` hangs for ten minutes before failing.
+  # Studio's home EFS filesystem, its mount target, and a pair of NFS security
+  # groups are created by SageMaker at domain creation. Terraform never sees
+  # them and cannot manage them: the API has no input for an existing
+  # filesystem, and home_efs_file_system_id is read-only output. "Delete" makes
+  # DeleteDomain remove all of them, which is what keeps `terraform destroy`
+  # clean. With the AWS default (Retain) the filesystem survives, its mount
+  # target pins the subnet, the NFS security groups pin the VPC, and destroy
+  # spends the provider's whole DependencyViolation retry budget before failing.
+  # aws_vpc has no configurable delete timeout, so that wait cannot be bounded —
+  # only avoided.
   retention_policy {
     home_efs_file_system = "Delete"
   }
 
-  # DescribeDomain does not return RetentionPolicy (it is write-only), so the
-  # provider cannot read it back into state. Without this, refreshing or
-  # importing an existing Domain plans a ForceNew replacement of a healthy
-  # domain. The value is still sent on create, and DeleteDomain honours the
-  # policy the Domain was created with.
+  # RetentionPolicy is create-only and cannot be read back after creation, so
+  # without ignore_changes every plan would show an in-place update that can
+  # never converge. The configured value is still sent on create, which is the
+  # part that matters: DeleteDomain honours the policy the domain was created
+  # with.
+  #
+  # The consequence worth knowing: AWS applies that policy once, at creation,
+  # and never again. A domain created before this block existed keeps "Retain"
+  # for its whole life, and ignore_changes means Terraform will neither notice
+  # nor correct it. The signature is `terraform destroy` hanging for many minutes
+  # on the subnet or VPC and then failing with DependencyViolation. If that
+  # happens, find what is actually pinning the VPC and remove it by hand:
+  #
+  #   aws ec2 describe-security-groups --filters Name=vpc-id,Values=<vpc-id> \
+  #     --query 'SecurityGroups[?contains(GroupName,`nfs`)].GroupName'
+  #   aws efs describe-file-systems
+  #
+  # then fix it properly by destroying and recreating the domain so it picks up
+  # this policy. Recreating is the fix; deleting the leftovers only unblocks the
+  # destroy in front of you.
   lifecycle {
     ignore_changes = [retention_policy]
   }
