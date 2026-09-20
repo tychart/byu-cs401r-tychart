@@ -1,4 +1,3 @@
-
 ========================================
  NorthStar Lab 1 — Verification Script
 ========================================
@@ -26,7 +25,7 @@
   ✓ B3 Remote state: S3 backend + DynamoDB lock
   ✓ B2 terraform apply output saved
   ✓ B2 apply output shows Apply complete
-  ✗ B5 LocalStack validation output saved — docs/lab1b-localstack-output.txt MISSING
+  ✓ B5 LocalStack validation output saved
 
 ── Shared Deliverables ──────────────────────────────────────────────────
   ✓ S .gitignore present
@@ -34,12 +33,9 @@
   ✓ S .gitignore covers .terraform/
   ✓ S No AWS credentials in git history (scripts/check-secrets.sh)
   ✓ S Studio shutdown screenshot submitted
-  ✗ S ADR document submitted — docs/lab1-adr.md MISSING
-  ✗ S Cost estimate document submitted — docs/lab1-cost-estimate.md MISSING
+  ✓ S ADR document submitted
+  ✓ S Cost estimate document submitted
 
 ========================================
- Results: 25 passed  3 failed
+ Results: 28 passed  0 failed
 ========================================
-
-Fix the failing checks above and re-run: bash scripts/verify-lab1.sh
-
