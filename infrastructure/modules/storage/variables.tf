@@ -10,13 +10,13 @@ variable "environment" {
   type        = string
 }
 
+variable "account_id" {
+  description = "AWS account ID, used as the last element of the globally unique bucket name"
+  type        = string
+}
+
 variable "prefixes" {
   description = "Top-level S3 prefixes to create in the data bucket"
   type        = list(string)
   default     = ["raw/", "processed/", "features/", "artifacts/"]
 }
-
-# variable "bucket_name" {
-#   description = "Name of the S3 bucket"
-#   type        = string
-# }
