@@ -54,6 +54,15 @@ resource "aws_sagemaker_domain" "this" {
     sharing_settings {
       notebook_output_option = "Disabled"
     }
+
+    # Deliberately empty, and it must stay here. DescribeDomain always returns
+    # a non-nil StudioWebPortalSettings ({"ExecutionRoleSessionNameMode":
+    # "USER_IDENTITY"}), and the provider's flatten only maps
+    # hidden_app_types / hidden_instance_types / hidden_ml_tools — none of
+    # which AWS sets. The result is an empty block written into state on every
+    # refresh. Omit it from the config and Terraform plans to remove the block
+    # on every plan, forever. Declaring it empty makes config and state agree.
+    studio_web_portal_settings {}
   }
 
   # Studio creates an EFS filesystem for home directories that Terraform never
