@@ -10,10 +10,10 @@
 #   value       = module.vpc.public_subnet_id
 # }
 
-# output "s3_bucket_name" {
-#   description = "Name of the data bucket"
-#   value       = module.storage.bucket_name
-# }
+output "s3_bucket_name" {
+  description = "Name of the data bucket"
+  value       = module.storage.bucket_name
+}
 
 # output "ml_engineer_role_arn" {
 #   description = "ARN of the MLEngineer role"

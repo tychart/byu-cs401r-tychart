@@ -15,3 +15,8 @@ variable "prefixes" {
   type        = list(string)
   default     = ["raw/", "processed/", "features/", "artifacts/"]
 }
+
+# variable "bucket_name" {
+#   description = "Name of the S3 bucket"
+#   type        = string
+# }

@@ -15,3 +15,9 @@
 # to exist before anything is written to it.
 
 # TODO: implement the resources above.
+
+data "aws_caller_identity" "current" {}
+
+resource "aws_s3_bucket" "data" {
+  bucket = "${var.project}-${var.environment}-data-${data.aws_caller_identity.current.account_id}"
+}
