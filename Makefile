@@ -14,7 +14,7 @@ BUCKET       = northstar-local-data-000000000000
 .PHONY: local-validate local-destroy local-clean
 
 local-validate:
-	@docker compose up -d --wait
+	@podman compose up -d --wait
 	@mkdir -p docs
 	@set -e; { \
 	  echo "== NorthStar Lab 1 — LocalStack validation =="; \
@@ -48,5 +48,5 @@ local-destroy:
 	terraform -chdir=$(LOCAL_ENV) destroy -auto-approve -input=false
 
 local-clean: local-destroy
-	docker compose down
+	podman compose down
 	rm -rf $(LOCAL_ENV)/.terraform $(LOCAL_ENV)/terraform.tfstate* .localstack
