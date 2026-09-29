@@ -1,0 +1,7 @@
+(test_llm) tychart@flap(fedora44) ~/t/test_llm > python from_instructions.py
+PASS  Titan embeddings        dim=1024
+PASS  Claude Haiku 4.5        'OK'
+(test_llm) tychart@flap(fedora44) ~/t/test_llm >
+
+I didn't need to set up any quotas and step 4 still worked for me.
+I talked to Matthew and professor T about this, and it should be fine for me to not need to configure quotas or report about the quotas that I didn't configure
