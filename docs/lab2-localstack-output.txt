@@ -1,0 +1,69 @@
+== NorthStar — LocalStack validation ==
+date: 2026-10-01T06:00:17Z
+
+== terraform init ==
+Initializing the backend...
+
+Initializing modules...
+
+Initializing provider plugins...
+- Reusing previous version of hashicorp/aws from the dependency lock file
+- Using previously-installed hashicorp/aws v5.100.0
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+
+== terraform apply ==
+data.aws_caller_identity.current: Reading...
+module.iam.data.aws_iam_policy_document.assume_role: Reading...
+module.vpc.aws_vpc.this: Refreshing state... [id=vpc-f650cd48926231c03]
+module.iam.data.aws_iam_policy_document.ml_engineer: Reading...
+module.iam.data.aws_iam_policy_document.assume_role: Read complete after 0s [id=286244903]
+module.iam.aws_iam_role.ml_engineer: Refreshing state... [id=northstar-local-MLEngineer]
+module.iam.data.aws_iam_policy_document.ml_engineer: Read complete after 0s [id=536941103]
+module.iam.aws_iam_policy.ml_engineer: Refreshing state... [id=arn:aws:iam::000000000000:policy/northstar-local-MLEngineerPolicy]
+data.aws_caller_identity.current: Read complete after 0s [id=000000000000]
+module.storage.aws_s3_bucket.data: Refreshing state... [id=northstar-local-data-000000000000]
+module.iam.aws_iam_role_policy_attachment.ml_engineer: Refreshing state... [id=northstar-local-MLEngineer-20261001055455802200000001]
+module.vpc.aws_internet_gateway.this: Refreshing state... [id=igw-0d893b3fb9bbe300e]
+module.vpc.aws_security_group.this: Refreshing state... [id=sg-f6d96bd26b3a0c7b6]
+module.vpc.aws_subnet.private: Refreshing state... [id=subnet-6cd603142f2afdcbf]
+module.vpc.aws_subnet.public: Refreshing state... [id=subnet-8a4450d915f3fe58b]
+module.vpc.aws_security_group.glue: Refreshing state... [id=sg-0ffef0f26bcb71b82]
+module.vpc.aws_route_table.public: Refreshing state... [id=rtb-17bfdf7f5b493fdfe]
+module.vpc.aws_route_table_association.public: Refreshing state... [id=rtbassoc-b396660e41d44eada]
+module.vpc.aws_route_table.private: Refreshing state... [id=rtb-5c5abd27b89babaea]
+module.vpc.aws_route_table_association.private: Refreshing state... [id=rtbassoc-9c1b2ef41f531fcd8]
+module.storage.aws_s3_bucket_public_access_block.data: Refreshing state... [id=northstar-local-data-000000000000]
+module.storage.aws_s3_bucket_versioning.data: Refreshing state... [id=northstar-local-data-000000000000]
+module.storage.aws_s3_bucket_server_side_encryption_configuration.data: Refreshing state... [id=northstar-local-data-000000000000]
+module.storage.aws_s3_object.prefix["artifacts/"]: Refreshing state... [id=artifacts/]
+module.storage.aws_s3_object.prefix["features/"]: Refreshing state... [id=features/]
+module.storage.aws_s3_object.prefix["processed/"]: Refreshing state... [id=processed/]
+module.storage.aws_s3_object.prefix["raw/"]: Refreshing state... [id=raw/]
+
+No changes. Your infrastructure matches the configuration.
+
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+ml_engineer_role_arn = "arn:aws:iam::000000000000:role/northstar-local-MLEngineer"
+private_subnet_id = "subnet-6cd603142f2afdcbf"
+public_subnet_id = "subnet-8a4450d915f3fe58b"
+s3_bucket_name = "northstar-local-data-000000000000"
+vpc_id = "vpc-f650cd48926231c03"
+
+== awslocal sts get-caller-identity ==
+
+Missing Dependency: Using the login credential provider requires an additional dependency. You will need to pip install "botocore[crt]" before proceeding.

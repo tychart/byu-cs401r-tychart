@@ -17,6 +17,11 @@ module "vpc" {
   source      = "../../modules/vpc"
   project     = var.project
   environment = var.environment
+
+  # LocalStack creates no usable NAT Gateway, so the private subnet stays
+  # isolated rather than getting a 0.0.0.0/0 route that points nowhere. This is
+  # the Lab 2 requirement: no NAT Gateway in the local stack.
+  enable_nat_gateway = false
 }
 
 module "storage" {
