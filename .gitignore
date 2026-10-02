@@ -9,5 +9,6 @@ __pycache__/
 *.zip
 .aws/
 .localstack/
+.pi/
 
 **/*.lock.hcl

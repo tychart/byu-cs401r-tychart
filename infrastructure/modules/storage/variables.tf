@@ -20,3 +20,9 @@ variable "prefixes" {
   type        = list(string)
   default     = ["raw/", "processed/", "features/", "artifacts/"]
 }
+
+variable "enable_lifecycle_rules" {
+  description = "Attach the Lab 2 retention rules (set false in LocalStack, which does not emulate S3 lifecycle configuration)"
+  type        = bool
+  default     = true
+}

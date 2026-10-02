@@ -38,7 +38,7 @@ module "sagemaker" {
   project            = var.project
   environment        = var.environment
   vpc_id             = module.vpc.vpc_id
-  subnet_ids         = [module.vpc.public_subnet_id]
+  subnet_ids         = [module.vpc.private_subnet_id]
   security_group_ids = [module.vpc.security_group_id]
   execution_role_arn = module.iam.ml_engineer_role_arn
   instance_type      = var.sagemaker_instance_type

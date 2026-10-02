@@ -24,9 +24,10 @@ resource "aws_sagemaker_domain" "this" {
   vpc_id     = var.vpc_id
   subnet_ids = var.subnet_ids
 
-  # Lab 1 keeps Studio in the public subnet: apps reach the internet through
-  # the internet gateway. Lab 2 moves them to VPC-only egress behind a NAT.
-  app_network_access_type = "PublicInternetOnly"
+  # Lab 2 moves Studio off the public subnet: apps have no public IP and reach
+  # AWS through the private subnet's NAT Gateway. This forces replacement
+  # (~10 min) if a domain already exists.
+  app_network_access_type = "VpcOnly"
 
   default_user_settings {
     execution_role  = var.execution_role_arn

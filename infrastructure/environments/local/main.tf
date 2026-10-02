@@ -29,6 +29,9 @@ module "storage" {
   project     = var.project
   environment = var.environment
   account_id  = data.aws_caller_identity.current.account_id
+
+  # LocalStack Community does not emulate S3 lifecycle configuration.
+  enable_lifecycle_rules = false
 }
 
 module "iam" {
