@@ -4,51 +4,58 @@
 [33m│[0m [0m[0mThe parameter "dynamodb_table" is deprecated. Use parameter "use_lockfile"
 [33m│[0m [0minstead.
 [33m╵[0m[0m
-[0m[1mmodule.iam.data.aws_iam_policy_document.assume_role_model_monitor: Reading...[0m[0m
 [0m[1mdata.aws_caller_identity.current: Reading...[0m[0m
 [0m[1mmodule.iam.data.aws_iam_policy_document.assume_role_data_engineer: Reading...[0m[0m
+[0m[1mmodule.iam.data.aws_iam_policy_document.assume_role_model_monitor: Reading...[0m[0m
 [0m[1mmodule.iam.data.aws_iam_policy_document.assume_role: Reading...[0m[0m
 [0m[1mmodule.iam.data.aws_iam_policy_document.model_monitor: Reading...[0m[0m
-[0m[1mmodule.iam.data.aws_iam_policy_document.data_engineer: Reading...[0m[0m
+[0m[1mmodule.vpc.aws_eip.nat[0]: Refreshing state... [id=eipalloc-0dd179f0de6a87619][0m
+[0m[1mmodule.glue.aws_glue_catalog_database.this: Refreshing state... [id=345594594463:northstar_dev][0m
+[0m[1mmodule.vpc.aws_vpc.this: Refreshing state... [id=vpc-06e571fe81cac967a][0m
 [0m[1mmodule.iam.data.aws_iam_policy_document.ml_engineer: Reading...[0m[0m
-[0m[1mmodule.vpc.aws_eip.nat[0]: Refreshing state... [id=eipalloc-00f2c036c651e94bf][0m
-[0m[1mmodule.vpc.aws_vpc.this: Refreshing state... [id=vpc-01366b5c6e027644c][0m
+[0m[1mmodule.iam.data.aws_iam_policy_document.data_engineer: Reading...[0m[0m
 [0m[1mmodule.iam.data.aws_iam_policy_document.assume_role: Read complete after 0s [id=286244903][0m
 [0m[1mmodule.iam.data.aws_iam_policy_document.assume_role_model_monitor: Read complete after 0s [id=286244903][0m
 [0m[1mmodule.iam.data.aws_iam_policy_document.assume_role_data_engineer: Read complete after 0s [id=4277183666][0m
 [0m[1mmodule.iam.data.aws_iam_policy_document.model_monitor: Read complete after 0s [id=1566779885][0m
+[0m[1mmodule.iam.aws_iam_role.model_monitor: Refreshing state... [id=northstar-dev-ModelMonitor][0m
 [0m[1mmodule.iam.aws_iam_role.ml_engineer: Refreshing state... [id=northstar-dev-MLEngineer][0m
 [0m[1mmodule.iam.aws_iam_role.data_engineer: Refreshing state... [id=northstar-dev-DataEngineer][0m
-[0m[1mmodule.iam.aws_iam_role.model_monitor: Refreshing state... [id=northstar-dev-ModelMonitor][0m
-[0m[1mmodule.iam.data.aws_iam_policy_document.data_engineer: Read complete after 0s [id=1946487190][0m
+[0m[1mmodule.iam.data.aws_iam_policy_document.data_engineer: Read complete after 0s [id=1911382540][0m
 [0m[1mmodule.iam.data.aws_iam_policy_document.ml_engineer: Read complete after 0s [id=421772833][0m
 [0m[1mmodule.iam.aws_iam_policy.model_monitor: Refreshing state... [id=arn:aws:iam::345594594463:policy/northstar-dev-ModelMonitorPolicy][0m
 [0m[1mmodule.iam.aws_iam_policy.data_engineer: Refreshing state... [id=arn:aws:iam::345594594463:policy/northstar-dev-DataEngineerPolicy][0m
 [0m[1mmodule.iam.aws_iam_policy.ml_engineer: Refreshing state... [id=arn:aws:iam::345594594463:policy/northstar-dev-MLEngineerPolicy][0m
 [0m[1mdata.aws_caller_identity.current: Read complete after 0s [id=345594594463][0m
 [0m[1mmodule.storage.aws_s3_bucket.data: Refreshing state... [id=northstar-dev-data-345594594463][0m
-[0m[1mmodule.iam.aws_iam_role_policy_attachment.model_monitor: Refreshing state... [id=northstar-dev-ModelMonitor-20261003194359194800000001][0m
-[0m[1mmodule.iam.aws_iam_role_policy_attachment.ml_engineer: Refreshing state... [id=northstar-dev-MLEngineer-20261003194359214800000002][0m
-[0m[1mmodule.iam.aws_iam_role_policy_attachment.data_engineer: Refreshing state... [id=northstar-dev-DataEngineer-20261003194359232200000003][0m
+[0m[1mmodule.iam.aws_iam_role_policy_attachment.data_engineer: Refreshing state... [id=northstar-dev-DataEngineer-20261004005037582400000001][0m
+[0m[1mmodule.iam.aws_iam_role_policy_attachment.model_monitor: Refreshing state... [id=northstar-dev-ModelMonitor-20261004005037586000000002][0m
+[0m[1mmodule.iam.aws_iam_role_policy_attachment.ml_engineer: Refreshing state... [id=northstar-dev-MLEngineer-20261004005037600100000003][0m
+[0m[1mmodule.vpc.aws_internet_gateway.this: Refreshing state... [id=igw-0cbf1bf688ee18f84][0m
+[0m[1mmodule.vpc.aws_subnet.public: Refreshing state... [id=subnet-075b68debcded2e8c][0m
+[0m[1mmodule.vpc.aws_subnet.private: Refreshing state... [id=subnet-08fc131dd80711222][0m
+[0m[1mmodule.vpc.aws_security_group.this: Refreshing state... [id=sg-0afbadbf306086a79][0m
+[0m[1mmodule.vpc.aws_route_table.public: Refreshing state... [id=rtb-0b58a8e6d971854e3][0m
+[0m[1mmodule.storage.aws_s3_bucket_server_side_encryption_configuration.data: Refreshing state... [id=northstar-dev-data-345594594463][0m
 [0m[1mmodule.storage.aws_s3_bucket_versioning.data: Refreshing state... [id=northstar-dev-data-345594594463][0m
 [0m[1mmodule.storage.aws_s3_bucket_public_access_block.data: Refreshing state... [id=northstar-dev-data-345594594463][0m
-[0m[1mmodule.storage.aws_s3_object.prefix["artifacts/"]: Refreshing state... [id=artifacts/][0m
-[0m[1mmodule.storage.aws_s3_bucket_server_side_encryption_configuration.data: Refreshing state... [id=northstar-dev-data-345594594463][0m
 [0m[1mmodule.storage.aws_s3_object.prefix["processed/"]: Refreshing state... [id=processed/][0m
+[0m[1mmodule.storage.aws_s3_object.prefix["artifacts/"]: Refreshing state... [id=artifacts/][0m
 [0m[1mmodule.storage.aws_s3_object.prefix["raw/"]: Refreshing state... [id=raw/][0m
 [0m[1mmodule.storage.aws_s3_object.prefix["features/"]: Refreshing state... [id=features/][0m
-[0m[1mmodule.vpc.aws_internet_gateway.this: Refreshing state... [id=igw-082b0884998f227a1][0m
-[0m[1mmodule.vpc.aws_subnet.public: Refreshing state... [id=subnet-0ef6195d1ed5e01db][0m
-[0m[1mmodule.vpc.aws_security_group.glue: Refreshing state... [id=sg-0704ee177cf4f3368][0m
-[0m[1mmodule.vpc.aws_subnet.private: Refreshing state... [id=subnet-02fca3443e66ee5bd][0m
-[0m[1mmodule.vpc.aws_security_group.this: Refreshing state... [id=sg-05c0c20e9811658cd][0m
-[0m[1mmodule.vpc.aws_route_table.public: Refreshing state... [id=rtb-03a438299d58e933f][0m
-[0m[1mmodule.vpc.aws_nat_gateway.this[0]: Refreshing state... [id=nat-057b42199f77b5b4b][0m
-[0m[1mmodule.vpc.aws_route_table.private: Refreshing state... [id=rtb-023a4f55832400673][0m
-[0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Refreshing state... [id=d-hpoi90inistn][0m
-[0m[1mmodule.vpc.aws_route_table_association.public: Refreshing state... [id=rtbassoc-03aa066cb324d04c5][0m
-[0m[1mmodule.vpc.aws_route_table_association.private: Refreshing state... [id=rtbassoc-0854d383826664028][0m
-[0m[1mmodule.sagemaker.aws_sagemaker_user_profile.ml_engineer: Refreshing state... [id=arn:aws:sagemaker:us-east-1:345594594463:user-profile/d-hpoi90inistn/MLEngineer][0m
+[0m[1mmodule.vpc.aws_nat_gateway.this[0]: Refreshing state... [id=nat-0b2dbf3086b78a145][0m
+[0m[1mmodule.glue.aws_s3_object.feature_engineer_script: Refreshing state... [id=artifacts/glue/feature_engineer.py][0m
+[0m[1mmodule.glue.aws_s3_object.transform_script: Refreshing state... [id=artifacts/glue/transform.py][0m
+[0m[1mmodule.glue.aws_glue_crawler.raw: Refreshing state... [id=northstar-dev-raw-crawler][0m
+[0m[1mmodule.feature_store.aws_sagemaker_feature_group.this: Refreshing state... [id=northstar-dev-customer-features][0m
+[0m[1mmodule.vpc.aws_route_table.private: Refreshing state... [id=rtb-06e7aafa90b000b2d][0m
+[0m[1mmodule.vpc.aws_route_table_association.public: Refreshing state... [id=rtbassoc-007a3f802be98b0d4][0m
+[0m[1mmodule.glue.aws_glue_connection.this: Refreshing state... [id=345594594463:northstar-dev-vpc-connection][0m
+[0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Refreshing state... [id=d-frbsodboab7a][0m
+[0m[1mmodule.vpc.aws_route_table_association.private: Refreshing state... [id=rtbassoc-07475f0f612648d8d][0m
+[0m[1mmodule.glue.aws_glue_job.transform: Refreshing state... [id=northstar-dev-transform][0m
+[0m[1mmodule.sagemaker.aws_sagemaker_user_profile.ml_engineer: Refreshing state... [id=arn:aws:sagemaker:us-east-1:345594594463:user-profile/d-frbsodboab7a/MLEngineer][0m
+[0m[1mmodule.glue.aws_glue_job.feature_engineer: Refreshing state... [id=northstar-dev-feature-engineer][0m
 [0m[1mmodule.storage.aws_s3_bucket_lifecycle_configuration.data[0]: Refreshing state... [id=northstar-dev-data-345594594463][0m
 
 Terraform used the selected providers to generate the following execution
@@ -56,6 +63,332 @@ plan. Resource actions are indicated with the following symbols:
   [31m-[0m destroy[0m
 
 Terraform will perform the following actions:
+
+[1m  # module.feature_store.aws_sagemaker_feature_group.this[0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "aws_sagemaker_feature_group" "this" {
+      [31m-[0m[0m arn                            = "arn:aws:sagemaker:us-east-1:345594594463:feature-group/northstar-dev-customer-features" [90m-> null[0m[0m
+      [31m-[0m[0m description                    = "NorthStar dev customer churn feature group" [90m-> null[0m[0m
+      [31m-[0m[0m event_time_feature_name        = "event_time" [90m-> null[0m[0m
+      [31m-[0m[0m feature_group_name             = "northstar-dev-customer-features" [90m-> null[0m[0m
+      [31m-[0m[0m id                             = "northstar-dev-customer-features" [90m-> null[0m[0m
+      [31m-[0m[0m record_identifier_feature_name = "customer_id" [90m-> null[0m[0m
+      [31m-[0m[0m role_arn                       = "arn:aws:iam::345594594463:role/northstar-dev-DataEngineer" [90m-> null[0m[0m
+      [31m-[0m[0m tags                           = {
+          [31m-[0m[0m "Name" = "northstar-dev-customer-features"
+        } [90m-> null[0m[0m
+      [31m-[0m[0m tags_all                       = {
+          [31m-[0m[0m "Environment" = "dev"
+          [31m-[0m[0m "ManagedBy"   = "terraform"
+          [31m-[0m[0m "Name"        = "northstar-dev-customer-features"
+          [31m-[0m[0m "Project"     = "northstar"
+        } [90m-> null[0m[0m
+
+      [31m-[0m[0m feature_definition {
+          [31m-[0m[0m feature_name    = "customer_id" [90m-> null[0m[0m
+          [31m-[0m[0m feature_type    = "String" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+      [31m-[0m[0m feature_definition {
+          [31m-[0m[0m feature_name    = "event_time" [90m-> null[0m[0m
+          [31m-[0m[0m feature_type    = "Fractional" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+      [31m-[0m[0m feature_definition {
+          [31m-[0m[0m feature_name    = "days_since_last_purchase" [90m-> null[0m[0m
+          [31m-[0m[0m feature_type    = "Fractional" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+      [31m-[0m[0m feature_definition {
+          [31m-[0m[0m feature_name    = "customer_tenure_days" [90m-> null[0m[0m
+          [31m-[0m[0m feature_type    = "Fractional" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+      [31m-[0m[0m feature_definition {
+          [31m-[0m[0m feature_name    = "purchase_frequency_30d" [90m-> null[0m[0m
+          [31m-[0m[0m feature_type    = "Fractional" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+      [31m-[0m[0m feature_definition {
+          [31m-[0m[0m feature_name    = "purchase_frequency_90d" [90m-> null[0m[0m
+          [31m-[0m[0m feature_type    = "Fractional" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+      [31m-[0m[0m feature_definition {
+          [31m-[0m[0m feature_name    = "purchase_frequency_180d" [90m-> null[0m[0m
+          [31m-[0m[0m feature_type    = "Fractional" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+      [31m-[0m[0m feature_definition {
+          [31m-[0m[0m feature_name    = "avg_order_value" [90m-> null[0m[0m
+          [31m-[0m[0m feature_type    = "Fractional" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+      [31m-[0m[0m feature_definition {
+          [31m-[0m[0m feature_name    = "total_spend_90d" [90m-> null[0m[0m
+          [31m-[0m[0m feature_type    = "Fractional" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+      [31m-[0m[0m feature_definition {
+          [31m-[0m[0m feature_name    = "total_lifetime_value" [90m-> null[0m[0m
+          [31m-[0m[0m feature_type    = "Fractional" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+      [31m-[0m[0m feature_definition {
+          [31m-[0m[0m feature_name    = "avg_basket_size_6m" [90m-> null[0m[0m
+          [31m-[0m[0m feature_type    = "Fractional" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+      [31m-[0m[0m feature_definition {
+          [31m-[0m[0m feature_name    = "category_diversity_score" [90m-> null[0m[0m
+          [31m-[0m[0m feature_type    = "Fractional" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+      [31m-[0m[0m feature_definition {
+          [31m-[0m[0m feature_name    = "online_to_store_ratio" [90m-> null[0m[0m
+          [31m-[0m[0m feature_type    = "Fractional" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+      [31m-[0m[0m feature_definition {
+          [31m-[0m[0m feature_name    = "loyalty_tier" [90m-> null[0m[0m
+          [31m-[0m[0m feature_type    = "String" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+      [31m-[0m[0m feature_definition {
+          [31m-[0m[0m feature_name    = "churn_risk_score" [90m-> null[0m[0m
+          [31m-[0m[0m feature_type    = "Fractional" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+      [31m-[0m[0m feature_definition {
+          [31m-[0m[0m feature_name    = "churn_label" [90m-> null[0m[0m
+          [31m-[0m[0m feature_type    = "Integral" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+
+      [31m-[0m[0m offline_store_config {
+          [31m-[0m[0m disable_glue_table_creation = false [90m-> null[0m[0m
+          [31m-[0m[0m table_format                = "Glue" [90m-> null[0m[0m
+
+          [31m-[0m[0m data_catalog_config {
+              [31m-[0m[0m catalog    = "AwsDataCatalog" [90m-> null[0m[0m
+              [31m-[0m[0m database   = "sagemaker_featurestore" [90m-> null[0m[0m
+              [31m-[0m[0m table_name = "northstar_dev_customer_features_1791079364" [90m-> null[0m[0m
+            }
+
+          [31m-[0m[0m s3_storage_config {
+              [31m-[0m[0m resolved_output_s3_uri = "s3://northstar-dev-data-345594594463/features/offline-store/345594594463/sagemaker/us-east-1/offline-store/northstar-dev-customer-features-1791079364/data" [90m-> null[0m[0m
+              [31m-[0m[0m s3_uri                 = "s3://northstar-dev-data-345594594463/features/offline-store/" [90m-> null[0m[0m
+                [90m# (1 unchanged attribute hidden)[0m[0m
+            }
+        }
+
+      [31m-[0m[0m online_store_config {
+          [31m-[0m[0m enable_online_store = true [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+
+      [31m-[0m[0m throughput_config {
+          [31m-[0m[0m provisioned_read_capacity_units  = 0 [90m-> null[0m[0m
+          [31m-[0m[0m provisioned_write_capacity_units = 0 [90m-> null[0m[0m
+          [31m-[0m[0m throughput_mode                  = "OnDemand" [90m-> null[0m[0m
+        }
+    }
+
+[1m  # module.glue.aws_glue_catalog_database.this[0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "aws_glue_catalog_database" "this" {
+      [31m-[0m[0m arn          = "arn:aws:glue:us-east-1:345594594463:database/northstar_dev" [90m-> null[0m[0m
+      [31m-[0m[0m catalog_id   = "345594594463" [90m-> null[0m[0m
+      [31m-[0m[0m description  = "Crawler-discovered raw tables and ETL output tables for northstar-dev" [90m-> null[0m[0m
+      [31m-[0m[0m id           = "345594594463:northstar_dev" [90m-> null[0m[0m
+      [31m-[0m[0m name         = "northstar_dev" [90m-> null[0m[0m
+      [31m-[0m[0m parameters   = {} [90m-> null[0m[0m
+      [31m-[0m[0m tags         = {} [90m-> null[0m[0m
+      [31m-[0m[0m tags_all     = {
+          [31m-[0m[0m "Environment" = "dev"
+          [31m-[0m[0m "ManagedBy"   = "terraform"
+          [31m-[0m[0m "Project"     = "northstar"
+        } [90m-> null[0m[0m
+        [90m# (1 unchanged attribute hidden)[0m[0m
+
+      [31m-[0m[0m create_table_default_permission {
+          [31m-[0m[0m permissions = [
+              [31m-[0m[0m "ALL",
+            ] [90m-> null[0m[0m
+
+          [31m-[0m[0m principal {
+              [31m-[0m[0m data_lake_principal_identifier = "IAM_ALLOWED_PRINCIPALS" [90m-> null[0m[0m
+            }
+        }
+    }
+
+[1m  # module.glue.aws_glue_connection.this[0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "aws_glue_connection" "this" {
+      [31m-[0m[0m arn                   = "arn:aws:glue:us-east-1:345594594463:connection/northstar-dev-vpc-connection" [90m-> null[0m[0m
+      [31m-[0m[0m athena_properties     = (sensitive value) [90m-> null[0m[0m
+      [31m-[0m[0m catalog_id            = "345594594463" [90m-> null[0m[0m
+      [31m-[0m[0m connection_properties = (sensitive value) [90m-> null[0m[0m
+      [31m-[0m[0m connection_type       = "NETWORK" [90m-> null[0m[0m
+      [31m-[0m[0m id                    = "345594594463:northstar-dev-vpc-connection" [90m-> null[0m[0m
+      [31m-[0m[0m match_criteria        = [] [90m-> null[0m[0m
+      [31m-[0m[0m name                  = "northstar-dev-vpc-connection" [90m-> null[0m[0m
+      [31m-[0m[0m tags                  = {
+          [31m-[0m[0m "Name" = "northstar-dev-vpc-connection"
+        } [90m-> null[0m[0m
+      [31m-[0m[0m tags_all              = {
+          [31m-[0m[0m "Environment" = "dev"
+          [31m-[0m[0m "ManagedBy"   = "terraform"
+          [31m-[0m[0m "Name"        = "northstar-dev-vpc-connection"
+          [31m-[0m[0m "Project"     = "northstar"
+        } [90m-> null[0m[0m
+        [90m# (1 unchanged attribute hidden)[0m[0m
+
+      [31m-[0m[0m physical_connection_requirements {
+          [31m-[0m[0m availability_zone      = "us-east-1a" [90m-> null[0m[0m
+          [31m-[0m[0m security_group_id_list = [
+              [31m-[0m[0m "sg-0afbadbf306086a79",
+            ] [90m-> null[0m[0m
+          [31m-[0m[0m subnet_id              = "subnet-08fc131dd80711222" [90m-> null[0m[0m
+        }
+    }
+
+[1m  # module.glue.aws_glue_crawler.raw[0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "aws_glue_crawler" "raw" {
+      [31m-[0m[0m arn                    = "arn:aws:glue:us-east-1:345594594463:crawler/northstar-dev-raw-crawler" [90m-> null[0m[0m
+      [31m-[0m[0m classifiers            = [] [90m-> null[0m[0m
+      [31m-[0m[0m database_name          = "northstar_dev" [90m-> null[0m[0m
+      [31m-[0m[0m id                     = "northstar-dev-raw-crawler" [90m-> null[0m[0m
+      [31m-[0m[0m name                   = "northstar-dev-raw-crawler" [90m-> null[0m[0m
+      [31m-[0m[0m role                   = "northstar-dev-DataEngineer" [90m-> null[0m[0m
+      [31m-[0m[0m tags                   = {
+          [31m-[0m[0m "Name" = "northstar-dev-raw-crawler"
+        } [90m-> null[0m[0m
+      [31m-[0m[0m tags_all               = {
+          [31m-[0m[0m "Environment" = "dev"
+          [31m-[0m[0m "ManagedBy"   = "terraform"
+          [31m-[0m[0m "Name"        = "northstar-dev-raw-crawler"
+          [31m-[0m[0m "Project"     = "northstar"
+        } [90m-> null[0m[0m
+        [90m# (5 unchanged attributes hidden)[0m[0m
+
+      [31m-[0m[0m lake_formation_configuration {
+          [31m-[0m[0m use_lake_formation_credentials = false [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+
+      [31m-[0m[0m lineage_configuration {
+          [31m-[0m[0m crawler_lineage_settings = "DISABLE" [90m-> null[0m[0m
+        }
+
+      [31m-[0m[0m recrawl_policy {
+          [31m-[0m[0m recrawl_behavior = "CRAWL_EVERYTHING" [90m-> null[0m[0m
+        }
+
+      [31m-[0m[0m s3_target {
+          [31m-[0m[0m exclusions          = [] [90m-> null[0m[0m
+          [31m-[0m[0m path                = "s3://northstar-dev-data-345594594463/raw/customers/" [90m-> null[0m[0m
+          [31m-[0m[0m sample_size         = 0 [90m-> null[0m[0m
+            [90m# (3 unchanged attributes hidden)[0m[0m
+        }
+
+      [31m-[0m[0m schema_change_policy {
+          [31m-[0m[0m delete_behavior = "LOG" [90m-> null[0m[0m
+          [31m-[0m[0m update_behavior = "UPDATE_IN_DATABASE" [90m-> null[0m[0m
+        }
+    }
+
+[1m  # module.glue.aws_glue_job.feature_engineer[0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "aws_glue_job" "feature_engineer" {
+      [31m-[0m[0m arn                       = "arn:aws:glue:us-east-1:345594594463:job/northstar-dev-feature-engineer" [90m-> null[0m[0m
+      [31m-[0m[0m connections               = [
+          [31m-[0m[0m "northstar-dev-vpc-connection",
+        ] [90m-> null[0m[0m
+      [31m-[0m[0m default_arguments         = {
+          [31m-[0m[0m "--TempDir"                          = "s3://northstar-dev-data-345594594463/features/_glue_temp/feature-engineer/"
+          [31m-[0m[0m "--enable-continuous-cloudwatch-log" = "true"
+          [31m-[0m[0m "--feature_group_name"               = "northstar-dev-customer-features"
+          [31m-[0m[0m "--input_path"                       = "s3://northstar-dev-data-345594594463/processed/customers/"
+          [31m-[0m[0m "--output_path"                      = "s3://northstar-dev-data-345594594463/features/customers/"
+          [31m-[0m[0m "--region"                           = "us-east-1"
+        } [90m-> null[0m[0m
+      [31m-[0m[0m glue_version              = "4.0" [90m-> null[0m[0m
+      [31m-[0m[0m id                        = "northstar-dev-feature-engineer" [90m-> null[0m[0m
+      [31m-[0m[0m job_run_queuing_enabled   = false [90m-> null[0m[0m
+      [31m-[0m[0m max_capacity              = 2 [90m-> null[0m[0m
+      [31m-[0m[0m max_retries               = 0 [90m-> null[0m[0m
+      [31m-[0m[0m name                      = "northstar-dev-feature-engineer" [90m-> null[0m[0m
+      [31m-[0m[0m non_overridable_arguments = {} [90m-> null[0m[0m
+      [31m-[0m[0m number_of_workers         = 2 [90m-> null[0m[0m
+      [31m-[0m[0m role_arn                  = "arn:aws:iam::345594594463:role/northstar-dev-DataEngineer" [90m-> null[0m[0m
+      [31m-[0m[0m tags                      = {
+          [31m-[0m[0m "Name" = "northstar-dev-feature-engineer"
+        } [90m-> null[0m[0m
+      [31m-[0m[0m tags_all                  = {
+          [31m-[0m[0m "Environment" = "dev"
+          [31m-[0m[0m "ManagedBy"   = "terraform"
+          [31m-[0m[0m "Name"        = "northstar-dev-feature-engineer"
+          [31m-[0m[0m "Project"     = "northstar"
+        } [90m-> null[0m[0m
+      [31m-[0m[0m timeout                   = 60 [90m-> null[0m[0m
+      [31m-[0m[0m worker_type               = "G.1X" [90m-> null[0m[0m
+        [90m# (4 unchanged attributes hidden)[0m[0m
+
+      [31m-[0m[0m command {
+          [31m-[0m[0m name            = "glueetl" [90m-> null[0m[0m
+          [31m-[0m[0m python_version  = "3" [90m-> null[0m[0m
+          [31m-[0m[0m script_location = "s3://northstar-dev-data-345594594463/artifacts/glue/feature_engineer.py" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+
+      [31m-[0m[0m execution_property {
+          [31m-[0m[0m max_concurrent_runs = 1 [90m-> null[0m[0m
+        }
+    }
+
+[1m  # module.glue.aws_glue_job.transform[0m will be [1m[31mdestroyed[0m
+[0m  [31m-[0m[0m resource "aws_glue_job" "transform" {
+      [31m-[0m[0m arn                       = "arn:aws:glue:us-east-1:345594594463:job/northstar-dev-transform" [90m-> null[0m[0m
+      [31m-[0m[0m connections               = [
+          [31m-[0m[0m "northstar-dev-vpc-connection",
+        ] [90m-> null[0m[0m
+      [31m-[0m[0m default_arguments         = {
+          [31m-[0m[0m "--TempDir"                          = "s3://northstar-dev-data-345594594463/processed/_glue_temp/transform/"
+          [31m-[0m[0m "--database_name"                    = "northstar_dev"
+          [31m-[0m[0m "--enable-continuous-cloudwatch-log" = "true"
+          [31m-[0m[0m "--output_path"                      = "s3://northstar-dev-data-345594594463/processed/customers/"
+          [31m-[0m[0m "--table_name"                       = "customers"
+        } [90m-> null[0m[0m
+      [31m-[0m[0m glue_version              = "4.0" [90m-> null[0m[0m
+      [31m-[0m[0m id                        = "northstar-dev-transform" [90m-> null[0m[0m
+      [31m-[0m[0m job_run_queuing_enabled   = false [90m-> null[0m[0m
+      [31m-[0m[0m max_capacity              = 2 [90m-> null[0m[0m
+      [31m-[0m[0m max_retries               = 0 [90m-> null[0m[0m
+      [31m-[0m[0m name                      = "northstar-dev-transform" [90m-> null[0m[0m
+      [31m-[0m[0m non_overridable_arguments = {} [90m-> null[0m[0m
+      [31m-[0m[0m number_of_workers         = 2 [90m-> null[0m[0m
+      [31m-[0m[0m role_arn                  = "arn:aws:iam::345594594463:role/northstar-dev-DataEngineer" [90m-> null[0m[0m
+      [31m-[0m[0m tags                      = {
+          [31m-[0m[0m "Name" = "northstar-dev-transform"
+        } [90m-> null[0m[0m
+      [31m-[0m[0m tags_all                  = {
+          [31m-[0m[0m "Environment" = "dev"
+          [31m-[0m[0m "ManagedBy"   = "terraform"
+          [31m-[0m[0m "Name"        = "northstar-dev-transform"
+          [31m-[0m[0m "Project"     = "northstar"
+        } [90m-> null[0m[0m
+      [31m-[0m[0m timeout                   = 60 [90m-> null[0m[0m
+      [31m-[0m[0m worker_type               = "G.1X" [90m-> null[0m[0m
+        [90m# (4 unchanged attributes hidden)[0m[0m
+
+      [31m-[0m[0m command {
+          [31m-[0m[0m name            = "glueetl" [90m-> null[0m[0m
+          [31m-[0m[0m python_version  = "3" [90m-> null[0m[0m
+          [31m-[0m[0m script_location = "s3://northstar-dev-data-345594594463/artifacts/glue/transform.py" [90m-> null[0m[0m
+            [90m# (1 unchanged attribute hidden)[0m[0m
+        }
+
+      [31m-[0m[0m execution_property {
+          [31m-[0m[0m max_concurrent_runs = 1 [90m-> null[0m[0m
+        }
+    }
 
 [1m  # module.iam.aws_iam_policy.data_engineer[0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_iam_policy" "data_engineer" {
@@ -116,6 +449,18 @@ Terraform will perform the following actions:
                       [31m-[0m[0m Sid      = "S3GlueScriptsRead"
                     },
                   [31m-[0m[0m {
+                      [31m-[0m[0m Action   = "s3:GetBucketAcl"
+                      [31m-[0m[0m Effect   = "Allow"
+                      [31m-[0m[0m Resource = "arn:aws:s3:::northstar-dev-data-*"
+                      [31m-[0m[0m Sid      = "S3BucketAcl"
+                    },
+                  [31m-[0m[0m {
+                      [31m-[0m[0m Action   = "s3:PutObjectAcl"
+                      [31m-[0m[0m Effect   = "Allow"
+                      [31m-[0m[0m Resource = "arn:aws:s3:::northstar-dev-data-*/features/*"
+                      [31m-[0m[0m Sid      = "S3FeatureOfflineStoreAcl"
+                    },
+                  [31m-[0m[0m {
                       [31m-[0m[0m Action   = [
                           [31m-[0m[0m "s3:ListBucket",
                           [31m-[0m[0m "s3:GetBucketLocation",
@@ -148,7 +493,7 @@ Terraform will perform the following actions:
               [31m-[0m[0m Version   = "2012-10-17"
             }
         ) [90m-> null[0m[0m
-      [31m-[0m[0m policy_id        = "ANPAVA5YLASPRF4WOOATF" [90m-> null[0m[0m
+      [31m-[0m[0m policy_id        = "ANPAVA5YLASPTYG7ZPWSZ" [90m-> null[0m[0m
       [31m-[0m[0m tags             = {
           [31m-[0m[0m "Name" = "northstar-dev-DataEngineerPolicy"
         } [90m-> null[0m[0m
@@ -266,7 +611,7 @@ Terraform will perform the following actions:
               [31m-[0m[0m Version   = "2012-10-17"
             }
         ) [90m-> null[0m[0m
-      [31m-[0m[0m policy_id        = "ANPAVA5YLASPQN4VPROXI" [90m-> null[0m[0m
+      [31m-[0m[0m policy_id        = "ANPAVA5YLASPX663ON5SH" [90m-> null[0m[0m
       [31m-[0m[0m tags             = {
           [31m-[0m[0m "Name" = "northstar-dev-MLEngineerPolicy"
         } [90m-> null[0m[0m
@@ -336,7 +681,7 @@ Terraform will perform the following actions:
               [31m-[0m[0m Version   = "2012-10-17"
             }
         ) [90m-> null[0m[0m
-      [31m-[0m[0m policy_id        = "ANPAVA5YLASPTI5XMDAFC" [90m-> null[0m[0m
+      [31m-[0m[0m policy_id        = "ANPAVA5YLASPR4GGSSRSG" [90m-> null[0m[0m
       [31m-[0m[0m tags             = {
           [31m-[0m[0m "Name" = "northstar-dev-ModelMonitorPolicy"
         } [90m-> null[0m[0m
@@ -371,7 +716,7 @@ Terraform will perform the following actions:
               [31m-[0m[0m Version   = "2012-10-17"
             }
         ) [90m-> null[0m[0m
-      [31m-[0m[0m create_date           = "2026-10-03T19:43:58Z" [90m-> null[0m[0m
+      [31m-[0m[0m create_date           = "2026-10-04T00:50:37Z" [90m-> null[0m[0m
       [31m-[0m[0m description           = "Glue, crawler, and Feature Store writer role for northstar-dev" [90m-> null[0m[0m
       [31m-[0m[0m force_detach_policies = false [90m-> null[0m[0m
       [31m-[0m[0m id                    = "northstar-dev-DataEngineer" [90m-> null[0m[0m
@@ -390,7 +735,7 @@ Terraform will perform the following actions:
           [31m-[0m[0m "Name"        = "northstar-dev-DataEngineer"
           [31m-[0m[0m "Project"     = "northstar"
         } [90m-> null[0m[0m
-      [31m-[0m[0m unique_id             = "AROAVA5YLASPSMBWSM7DL" [90m-> null[0m[0m
+      [31m-[0m[0m unique_id             = "AROAVA5YLASPZN6JB5ZCO" [90m-> null[0m[0m
         [90m# (2 unchanged attributes hidden)[0m[0m
     }
 
@@ -412,7 +757,7 @@ Terraform will perform the following actions:
               [31m-[0m[0m Version   = "2012-10-17"
             }
         ) [90m-> null[0m[0m
-      [31m-[0m[0m create_date           = "2026-10-03T19:43:58Z" [90m-> null[0m[0m
+      [31m-[0m[0m create_date           = "2026-10-04T00:50:37Z" [90m-> null[0m[0m
       [31m-[0m[0m description           = "SageMaker execution role for northstar-dev ML work" [90m-> null[0m[0m
       [31m-[0m[0m force_detach_policies = false [90m-> null[0m[0m
       [31m-[0m[0m id                    = "northstar-dev-MLEngineer" [90m-> null[0m[0m
@@ -431,7 +776,7 @@ Terraform will perform the following actions:
           [31m-[0m[0m "Name"        = "northstar-dev-MLEngineer"
           [31m-[0m[0m "Project"     = "northstar"
         } [90m-> null[0m[0m
-      [31m-[0m[0m unique_id             = "AROAVA5YLASPZNRB36DXZ" [90m-> null[0m[0m
+      [31m-[0m[0m unique_id             = "AROAVA5YLASP7MSRFT7TB" [90m-> null[0m[0m
         [90m# (2 unchanged attributes hidden)[0m[0m
     }
 
@@ -453,7 +798,7 @@ Terraform will perform the following actions:
               [31m-[0m[0m Version   = "2012-10-17"
             }
         ) [90m-> null[0m[0m
-      [31m-[0m[0m create_date           = "2026-10-03T19:43:58Z" [90m-> null[0m[0m
+      [31m-[0m[0m create_date           = "2026-10-04T00:50:37Z" [90m-> null[0m[0m
       [31m-[0m[0m description           = "Read-only drift observation role for northstar-dev" [90m-> null[0m[0m
       [31m-[0m[0m force_detach_policies = false [90m-> null[0m[0m
       [31m-[0m[0m id                    = "northstar-dev-ModelMonitor" [90m-> null[0m[0m
@@ -472,27 +817,27 @@ Terraform will perform the following actions:
           [31m-[0m[0m "Name"        = "northstar-dev-ModelMonitor"
           [31m-[0m[0m "Project"     = "northstar"
         } [90m-> null[0m[0m
-      [31m-[0m[0m unique_id             = "AROAVA5YLASP36B5K3JGU" [90m-> null[0m[0m
+      [31m-[0m[0m unique_id             = "AROAVA5YLASP5KDPH6Z5Y" [90m-> null[0m[0m
         [90m# (2 unchanged attributes hidden)[0m[0m
     }
 
 [1m  # module.iam.aws_iam_role_policy_attachment.data_engineer[0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_iam_role_policy_attachment" "data_engineer" {
-      [31m-[0m[0m id         = "northstar-dev-DataEngineer-20261003194359232200000003" [90m-> null[0m[0m
+      [31m-[0m[0m id         = "northstar-dev-DataEngineer-20261004005037582400000001" [90m-> null[0m[0m
       [31m-[0m[0m policy_arn = "arn:aws:iam::345594594463:policy/northstar-dev-DataEngineerPolicy" [90m-> null[0m[0m
       [31m-[0m[0m role       = "northstar-dev-DataEngineer" [90m-> null[0m[0m
     }
 
 [1m  # module.iam.aws_iam_role_policy_attachment.ml_engineer[0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_iam_role_policy_attachment" "ml_engineer" {
-      [31m-[0m[0m id         = "northstar-dev-MLEngineer-20261003194359214800000002" [90m-> null[0m[0m
+      [31m-[0m[0m id         = "northstar-dev-MLEngineer-20261004005037600100000003" [90m-> null[0m[0m
       [31m-[0m[0m policy_arn = "arn:aws:iam::345594594463:policy/northstar-dev-MLEngineerPolicy" [90m-> null[0m[0m
       [31m-[0m[0m role       = "northstar-dev-MLEngineer" [90m-> null[0m[0m
     }
 
 [1m  # module.iam.aws_iam_role_policy_attachment.model_monitor[0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_iam_role_policy_attachment" "model_monitor" {
-      [31m-[0m[0m id         = "northstar-dev-ModelMonitor-20261003194359194800000001" [90m-> null[0m[0m
+      [31m-[0m[0m id         = "northstar-dev-ModelMonitor-20261004005037586000000002" [90m-> null[0m[0m
       [31m-[0m[0m policy_arn = "arn:aws:iam::345594594463:policy/northstar-dev-ModelMonitorPolicy" [90m-> null[0m[0m
       [31m-[0m[0m role       = "northstar-dev-ModelMonitor" [90m-> null[0m[0m
     }
@@ -500,13 +845,13 @@ Terraform will perform the following actions:
 [1m  # module.sagemaker.aws_sagemaker_domain.this[0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_sagemaker_domain" "this" {
       [31m-[0m[0m app_network_access_type                        = "VpcOnly" [90m-> null[0m[0m
-      [31m-[0m[0m arn                                            = "arn:aws:sagemaker:us-east-1:345594594463:domain/d-hpoi90inistn" [90m-> null[0m[0m
+      [31m-[0m[0m arn                                            = "arn:aws:sagemaker:us-east-1:345594594463:domain/d-frbsodboab7a" [90m-> null[0m[0m
       [31m-[0m[0m auth_mode                                      = "IAM" [90m-> null[0m[0m
       [31m-[0m[0m domain_name                                    = "northstar-dev-domain" [90m-> null[0m[0m
-      [31m-[0m[0m home_efs_file_system_id                        = "fs-0d770be6dc6cb6c81" [90m-> null[0m[0m
-      [31m-[0m[0m id                                             = "d-hpoi90inistn" [90m-> null[0m[0m
+      [31m-[0m[0m home_efs_file_system_id                        = "fs-004b374c6eeaed19a" [90m-> null[0m[0m
+      [31m-[0m[0m id                                             = "d-frbsodboab7a" [90m-> null[0m[0m
       [31m-[0m[0m subnet_ids                                     = [
-          [31m-[0m[0m "subnet-02fca3443e66ee5bd",
+          [31m-[0m[0m "subnet-08fc131dd80711222",
         ] [90m-> null[0m[0m
       [31m-[0m[0m tag_propagation                                = "DISABLED" [90m-> null[0m[0m
       [31m-[0m[0m tags                                           = {
@@ -518,8 +863,8 @@ Terraform will perform the following actions:
           [31m-[0m[0m "Name"        = "northstar-dev-domain"
           [31m-[0m[0m "Project"     = "northstar"
         } [90m-> null[0m[0m
-      [31m-[0m[0m url                                            = "https://d-hpoi90inistn.studio.us-east-1.sagemaker.aws" [90m-> null[0m[0m
-      [31m-[0m[0m vpc_id                                         = "vpc-01366b5c6e027644c" [90m-> null[0m[0m
+      [31m-[0m[0m url                                            = "https://d-frbsodboab7a.studio.us-east-1.sagemaker.aws" [90m-> null[0m[0m
+      [31m-[0m[0m vpc_id                                         = "vpc-06e571fe81cac967a" [90m-> null[0m[0m
         [90m# (5 unchanged attributes hidden)[0m[0m
 
       [31m-[0m[0m default_user_settings {
@@ -527,7 +872,7 @@ Terraform will perform the following actions:
           [31m-[0m[0m default_landing_uri = "studio::" [90m-> null[0m[0m
           [31m-[0m[0m execution_role      = "arn:aws:iam::345594594463:role/northstar-dev-MLEngineer" [90m-> null[0m[0m
           [31m-[0m[0m security_groups     = [
-              [31m-[0m[0m "sg-05c0c20e9811658cd",
+              [31m-[0m[0m "sg-0afbadbf306086a79",
             ] [90m-> null[0m[0m
           [31m-[0m[0m studio_web_portal   = "ENABLED" [90m-> null[0m[0m
 
@@ -564,10 +909,10 @@ Terraform will perform the following actions:
 
 [1m  # module.sagemaker.aws_sagemaker_user_profile.ml_engineer[0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_sagemaker_user_profile" "ml_engineer" {
-      [31m-[0m[0m arn                            = "arn:aws:sagemaker:us-east-1:345594594463:user-profile/d-hpoi90inistn/MLEngineer" [90m-> null[0m[0m
-      [31m-[0m[0m domain_id                      = "d-hpoi90inistn" [90m-> null[0m[0m
+      [31m-[0m[0m arn                            = "arn:aws:sagemaker:us-east-1:345594594463:user-profile/d-frbsodboab7a/MLEngineer" [90m-> null[0m[0m
+      [31m-[0m[0m domain_id                      = "d-frbsodboab7a" [90m-> null[0m[0m
       [31m-[0m[0m home_efs_file_system_uid       = "200005" [90m-> null[0m[0m
-      [31m-[0m[0m id                             = "arn:aws:sagemaker:us-east-1:345594594463:user-profile/d-hpoi90inistn/MLEngineer" [90m-> null[0m[0m
+      [31m-[0m[0m id                             = "arn:aws:sagemaker:us-east-1:345594594463:user-profile/d-frbsodboab7a/MLEngineer" [90m-> null[0m[0m
       [31m-[0m[0m tags                           = {
           [31m-[0m[0m "Name" = "northstar-dev-MLEngineer"
         } [90m-> null[0m[0m
@@ -584,7 +929,7 @@ Terraform will perform the following actions:
           [31m-[0m[0m auto_mount_home_efs = "DefaultAsDomain" [90m-> null[0m[0m
           [31m-[0m[0m execution_role      = "arn:aws:iam::345594594463:role/northstar-dev-MLEngineer" [90m-> null[0m[0m
           [31m-[0m[0m security_groups     = [
-              [31m-[0m[0m "sg-05c0c20e9811658cd",
+              [31m-[0m[0m "sg-0afbadbf306086a79",
             ] [90m-> null[0m[0m
             [90m# (2 unchanged attributes hidden)[0m[0m
         }
@@ -812,17 +1157,17 @@ Terraform will perform the following actions:
 
 [1m  # module.vpc.aws_eip.nat[0][0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_eip" "nat" {
-      [31m-[0m[0m allocation_id            = "eipalloc-00f2c036c651e94bf" [90m-> null[0m[0m
-      [31m-[0m[0m arn                      = "arn:aws:ec2:us-east-1:345594594463:elastic-ip/eipalloc-00f2c036c651e94bf" [90m-> null[0m[0m
-      [31m-[0m[0m association_id           = "eipassoc-0dfba1c206c0af25e" [90m-> null[0m[0m
+      [31m-[0m[0m allocation_id            = "eipalloc-0dd179f0de6a87619" [90m-> null[0m[0m
+      [31m-[0m[0m arn                      = "arn:aws:ec2:us-east-1:345594594463:elastic-ip/eipalloc-0dd179f0de6a87619" [90m-> null[0m[0m
+      [31m-[0m[0m association_id           = "eipassoc-084e2cbcc967c37a6" [90m-> null[0m[0m
       [31m-[0m[0m domain                   = "vpc" [90m-> null[0m[0m
-      [31m-[0m[0m id                       = "eipalloc-00f2c036c651e94bf" [90m-> null[0m[0m
+      [31m-[0m[0m id                       = "eipalloc-0dd179f0de6a87619" [90m-> null[0m[0m
       [31m-[0m[0m network_border_group     = "us-east-1" [90m-> null[0m[0m
-      [31m-[0m[0m network_interface        = "eni-078e5ee612d2759c8" [90m-> null[0m[0m
-      [31m-[0m[0m private_dns              = "ip-10-0-100-180.ec2.internal" [90m-> null[0m[0m
-      [31m-[0m[0m private_ip               = "10.0.100.180" [90m-> null[0m[0m
-      [31m-[0m[0m public_dns               = "ec2-44-206-81-101.compute-1.amazonaws.com" [90m-> null[0m[0m
-      [31m-[0m[0m public_ip                = "44.206.81.101" [90m-> null[0m[0m
+      [31m-[0m[0m network_interface        = "eni-0eecde49ed4851711" [90m-> null[0m[0m
+      [31m-[0m[0m private_dns              = "ip-10-0-100-139.ec2.internal" [90m-> null[0m[0m
+      [31m-[0m[0m private_ip               = "10.0.100.139" [90m-> null[0m[0m
+      [31m-[0m[0m public_dns               = "ec2-32-197-133-73.compute-1.amazonaws.com" [90m-> null[0m[0m
+      [31m-[0m[0m public_ip                = "32.197.133.73" [90m-> null[0m[0m
       [31m-[0m[0m public_ipv4_pool         = "amazon" [90m-> null[0m[0m
       [31m-[0m[0m tags                     = {
           [31m-[0m[0m "Name" = "northstar-dev-eip"
@@ -839,8 +1184,8 @@ Terraform will perform the following actions:
 
 [1m  # module.vpc.aws_internet_gateway.this[0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_internet_gateway" "this" {
-      [31m-[0m[0m arn      = "arn:aws:ec2:us-east-1:345594594463:internet-gateway/igw-082b0884998f227a1" [90m-> null[0m[0m
-      [31m-[0m[0m id       = "igw-082b0884998f227a1" [90m-> null[0m[0m
+      [31m-[0m[0m arn      = "arn:aws:ec2:us-east-1:345594594463:internet-gateway/igw-0cbf1bf688ee18f84" [90m-> null[0m[0m
+      [31m-[0m[0m id       = "igw-0cbf1bf688ee18f84" [90m-> null[0m[0m
       [31m-[0m[0m owner_id = "345594594463" [90m-> null[0m[0m
       [31m-[0m[0m tags     = {
           [31m-[0m[0m "Name" = "northstar-dev-igw"
@@ -851,22 +1196,22 @@ Terraform will perform the following actions:
           [31m-[0m[0m "Name"        = "northstar-dev-igw"
           [31m-[0m[0m "Project"     = "northstar"
         } [90m-> null[0m[0m
-      [31m-[0m[0m vpc_id   = "vpc-01366b5c6e027644c" [90m-> null[0m[0m
+      [31m-[0m[0m vpc_id   = "vpc-06e571fe81cac967a" [90m-> null[0m[0m
     }
 
 [1m  # module.vpc.aws_nat_gateway.this[0][0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_nat_gateway" "this" {
-      [31m-[0m[0m allocation_id                      = "eipalloc-00f2c036c651e94bf" [90m-> null[0m[0m
-      [31m-[0m[0m association_id                     = "eipassoc-0dfba1c206c0af25e" [90m-> null[0m[0m
+      [31m-[0m[0m allocation_id                      = "eipalloc-0dd179f0de6a87619" [90m-> null[0m[0m
+      [31m-[0m[0m association_id                     = "eipassoc-084e2cbcc967c37a6" [90m-> null[0m[0m
       [31m-[0m[0m connectivity_type                  = "public" [90m-> null[0m[0m
-      [31m-[0m[0m id                                 = "nat-057b42199f77b5b4b" [90m-> null[0m[0m
-      [31m-[0m[0m network_interface_id               = "eni-078e5ee612d2759c8" [90m-> null[0m[0m
-      [31m-[0m[0m private_ip                         = "10.0.100.180" [90m-> null[0m[0m
-      [31m-[0m[0m public_ip                          = "44.206.81.101" [90m-> null[0m[0m
+      [31m-[0m[0m id                                 = "nat-0b2dbf3086b78a145" [90m-> null[0m[0m
+      [31m-[0m[0m network_interface_id               = "eni-0eecde49ed4851711" [90m-> null[0m[0m
+      [31m-[0m[0m private_ip                         = "10.0.100.139" [90m-> null[0m[0m
+      [31m-[0m[0m public_ip                          = "32.197.133.73" [90m-> null[0m[0m
       [31m-[0m[0m secondary_allocation_ids           = [] [90m-> null[0m[0m
       [31m-[0m[0m secondary_private_ip_address_count = 0 [90m-> null[0m[0m
       [31m-[0m[0m secondary_private_ip_addresses     = [] [90m-> null[0m[0m
-      [31m-[0m[0m subnet_id                          = "subnet-0ef6195d1ed5e01db" [90m-> null[0m[0m
+      [31m-[0m[0m subnet_id                          = "subnet-075b68debcded2e8c" [90m-> null[0m[0m
       [31m-[0m[0m tags                               = {
           [31m-[0m[0m "Name" = "northstar-dev-nat"
         } [90m-> null[0m[0m
@@ -880,14 +1225,14 @@ Terraform will perform the following actions:
 
 [1m  # module.vpc.aws_route_table.private[0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_route_table" "private" {
-      [31m-[0m[0m arn              = "arn:aws:ec2:us-east-1:345594594463:route-table/rtb-023a4f55832400673" [90m-> null[0m[0m
-      [31m-[0m[0m id               = "rtb-023a4f55832400673" [90m-> null[0m[0m
+      [31m-[0m[0m arn              = "arn:aws:ec2:us-east-1:345594594463:route-table/rtb-06e7aafa90b000b2d" [90m-> null[0m[0m
+      [31m-[0m[0m id               = "rtb-06e7aafa90b000b2d" [90m-> null[0m[0m
       [31m-[0m[0m owner_id         = "345594594463" [90m-> null[0m[0m
       [31m-[0m[0m propagating_vgws = [] [90m-> null[0m[0m
       [31m-[0m[0m route            = [
           [31m-[0m[0m {
               [31m-[0m[0m cidr_block                 = "0.0.0.0/0"
-              [31m-[0m[0m nat_gateway_id             = "nat-057b42199f77b5b4b"
+              [31m-[0m[0m nat_gateway_id             = "nat-0b2dbf3086b78a145"
                 [90m# (11 unchanged attributes hidden)[0m[0m
             },
         ] [90m-> null[0m[0m
@@ -900,19 +1245,19 @@ Terraform will perform the following actions:
           [31m-[0m[0m "Name"        = "northstar-dev-private-rt"
           [31m-[0m[0m "Project"     = "northstar"
         } [90m-> null[0m[0m
-      [31m-[0m[0m vpc_id           = "vpc-01366b5c6e027644c" [90m-> null[0m[0m
+      [31m-[0m[0m vpc_id           = "vpc-06e571fe81cac967a" [90m-> null[0m[0m
     }
 
 [1m  # module.vpc.aws_route_table.public[0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_route_table" "public" {
-      [31m-[0m[0m arn              = "arn:aws:ec2:us-east-1:345594594463:route-table/rtb-03a438299d58e933f" [90m-> null[0m[0m
-      [31m-[0m[0m id               = "rtb-03a438299d58e933f" [90m-> null[0m[0m
+      [31m-[0m[0m arn              = "arn:aws:ec2:us-east-1:345594594463:route-table/rtb-0b58a8e6d971854e3" [90m-> null[0m[0m
+      [31m-[0m[0m id               = "rtb-0b58a8e6d971854e3" [90m-> null[0m[0m
       [31m-[0m[0m owner_id         = "345594594463" [90m-> null[0m[0m
       [31m-[0m[0m propagating_vgws = [] [90m-> null[0m[0m
       [31m-[0m[0m route            = [
           [31m-[0m[0m {
               [31m-[0m[0m cidr_block                 = "0.0.0.0/0"
-              [31m-[0m[0m gateway_id                 = "igw-082b0884998f227a1"
+              [31m-[0m[0m gateway_id                 = "igw-0cbf1bf688ee18f84"
                 [90m# (11 unchanged attributes hidden)[0m[0m
             },
         ] [90m-> null[0m[0m
@@ -925,78 +1270,29 @@ Terraform will perform the following actions:
           [31m-[0m[0m "Name"        = "northstar-dev-public-rt"
           [31m-[0m[0m "Project"     = "northstar"
         } [90m-> null[0m[0m
-      [31m-[0m[0m vpc_id           = "vpc-01366b5c6e027644c" [90m-> null[0m[0m
+      [31m-[0m[0m vpc_id           = "vpc-06e571fe81cac967a" [90m-> null[0m[0m
     }
 
 [1m  # module.vpc.aws_route_table_association.private[0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_route_table_association" "private" {
-      [31m-[0m[0m id             = "rtbassoc-0854d383826664028" [90m-> null[0m[0m
-      [31m-[0m[0m route_table_id = "rtb-023a4f55832400673" [90m-> null[0m[0m
-      [31m-[0m[0m subnet_id      = "subnet-02fca3443e66ee5bd" [90m-> null[0m[0m
+      [31m-[0m[0m id             = "rtbassoc-07475f0f612648d8d" [90m-> null[0m[0m
+      [31m-[0m[0m route_table_id = "rtb-06e7aafa90b000b2d" [90m-> null[0m[0m
+      [31m-[0m[0m subnet_id      = "subnet-08fc131dd80711222" [90m-> null[0m[0m
         [90m# (1 unchanged attribute hidden)[0m[0m
     }
 
 [1m  # module.vpc.aws_route_table_association.public[0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_route_table_association" "public" {
-      [31m-[0m[0m id             = "rtbassoc-03aa066cb324d04c5" [90m-> null[0m[0m
-      [31m-[0m[0m route_table_id = "rtb-03a438299d58e933f" [90m-> null[0m[0m
-      [31m-[0m[0m subnet_id      = "subnet-0ef6195d1ed5e01db" [90m-> null[0m[0m
-        [90m# (1 unchanged attribute hidden)[0m[0m
-    }
-
-[1m  # module.vpc.aws_security_group.glue[0m will be [1m[31mdestroyed[0m
-[0m  [31m-[0m[0m resource "aws_security_group" "glue" {
-      [31m-[0m[0m arn                    = "arn:aws:ec2:us-east-1:345594594463:security-group/sg-0704ee177cf4f3368" [90m-> null[0m[0m
-      [31m-[0m[0m description            = "Glue job ENIs: self-referencing all-ports ingress required inside a VPC" [90m-> null[0m[0m
-      [31m-[0m[0m egress                 = [
-          [31m-[0m[0m {
-              [31m-[0m[0m cidr_blocks      = [
-                  [31m-[0m[0m "0.0.0.0/0",
-                ]
-              [31m-[0m[0m description      = "All outbound traffic"
-              [31m-[0m[0m from_port        = 0
-              [31m-[0m[0m ipv6_cidr_blocks = []
-              [31m-[0m[0m prefix_list_ids  = []
-              [31m-[0m[0m protocol         = "-1"
-              [31m-[0m[0m security_groups  = []
-              [31m-[0m[0m self             = false
-              [31m-[0m[0m to_port          = 0
-            },
-        ] [90m-> null[0m[0m
-      [31m-[0m[0m id                     = "sg-0704ee177cf4f3368" [90m-> null[0m[0m
-      [31m-[0m[0m ingress                = [
-          [31m-[0m[0m {
-              [31m-[0m[0m cidr_blocks      = []
-              [31m-[0m[0m description      = "Glue worker-to-worker traffic (self-reference, all ports)"
-              [31m-[0m[0m from_port        = 0
-              [31m-[0m[0m ipv6_cidr_blocks = []
-              [31m-[0m[0m prefix_list_ids  = []
-              [31m-[0m[0m protocol         = "-1"
-              [31m-[0m[0m security_groups  = []
-              [31m-[0m[0m self             = true
-              [31m-[0m[0m to_port          = 0
-            },
-        ] [90m-> null[0m[0m
-      [31m-[0m[0m name                   = "northstar-dev-glue-sg" [90m-> null[0m[0m
-      [31m-[0m[0m owner_id               = "345594594463" [90m-> null[0m[0m
-      [31m-[0m[0m revoke_rules_on_delete = false [90m-> null[0m[0m
-      [31m-[0m[0m tags                   = {
-          [31m-[0m[0m "Name" = "northstar-dev-glue-sg"
-        } [90m-> null[0m[0m
-      [31m-[0m[0m tags_all               = {
-          [31m-[0m[0m "Environment" = "dev"
-          [31m-[0m[0m "ManagedBy"   = "terraform"
-          [31m-[0m[0m "Name"        = "northstar-dev-glue-sg"
-          [31m-[0m[0m "Project"     = "northstar"
-        } [90m-> null[0m[0m
-      [31m-[0m[0m vpc_id                 = "vpc-01366b5c6e027644c" [90m-> null[0m[0m
+      [31m-[0m[0m id             = "rtbassoc-007a3f802be98b0d4" [90m-> null[0m[0m
+      [31m-[0m[0m route_table_id = "rtb-0b58a8e6d971854e3" [90m-> null[0m[0m
+      [31m-[0m[0m subnet_id      = "subnet-075b68debcded2e8c" [90m-> null[0m[0m
         [90m# (1 unchanged attribute hidden)[0m[0m
     }
 
 [1m  # module.vpc.aws_security_group.this[0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_security_group" "this" {
-      [31m-[0m[0m arn                    = "arn:aws:ec2:us-east-1:345594594463:security-group/sg-05c0c20e9811658cd" [90m-> null[0m[0m
-      [31m-[0m[0m description            = "SageMaker Studio traffic: inbound from the VPC CIDR only" [90m-> null[0m[0m
+      [31m-[0m[0m arn                    = "arn:aws:ec2:us-east-1:345594594463:security-group/sg-0afbadbf306086a79" [90m-> null[0m[0m
+      [31m-[0m[0m description            = "SageMaker Studio and Glue traffic: inbound from inside the VPC only" [90m-> null[0m[0m
       [31m-[0m[0m egress                 = [
           [31m-[0m[0m {
               [31m-[0m[0m cidr_blocks      = [
@@ -1012,7 +1308,7 @@ Terraform will perform the following actions:
               [31m-[0m[0m to_port          = 0
             },
         ] [90m-> null[0m[0m
-      [31m-[0m[0m id                     = "sg-05c0c20e9811658cd" [90m-> null[0m[0m
+      [31m-[0m[0m id                     = "sg-0afbadbf306086a79" [90m-> null[0m[0m
       [31m-[0m[0m ingress                = [
           [31m-[0m[0m {
               [31m-[0m[0m cidr_blocks      = [
@@ -1025,6 +1321,17 @@ Terraform will perform the following actions:
               [31m-[0m[0m protocol         = "-1"
               [31m-[0m[0m security_groups  = []
               [31m-[0m[0m self             = false
+              [31m-[0m[0m to_port          = 0
+            },
+          [31m-[0m[0m {
+              [31m-[0m[0m cidr_blocks      = []
+              [31m-[0m[0m description      = "Glue worker-to-worker traffic (self-reference, all ports)"
+              [31m-[0m[0m from_port        = 0
+              [31m-[0m[0m ipv6_cidr_blocks = []
+              [31m-[0m[0m prefix_list_ids  = []
+              [31m-[0m[0m protocol         = "-1"
+              [31m-[0m[0m security_groups  = []
+              [31m-[0m[0m self             = true
               [31m-[0m[0m to_port          = 0
             },
         ] [90m-> null[0m[0m
@@ -1040,13 +1347,13 @@ Terraform will perform the following actions:
           [31m-[0m[0m "Name"        = "northstar-dev-sagemaker-sg"
           [31m-[0m[0m "Project"     = "northstar"
         } [90m-> null[0m[0m
-      [31m-[0m[0m vpc_id                 = "vpc-01366b5c6e027644c" [90m-> null[0m[0m
+      [31m-[0m[0m vpc_id                 = "vpc-06e571fe81cac967a" [90m-> null[0m[0m
         [90m# (1 unchanged attribute hidden)[0m[0m
     }
 
 [1m  # module.vpc.aws_subnet.private[0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_subnet" "private" {
-      [31m-[0m[0m arn                                            = "arn:aws:ec2:us-east-1:345594594463:subnet/subnet-02fca3443e66ee5bd" [90m-> null[0m[0m
+      [31m-[0m[0m arn                                            = "arn:aws:ec2:us-east-1:345594594463:subnet/subnet-08fc131dd80711222" [90m-> null[0m[0m
       [31m-[0m[0m assign_ipv6_address_on_creation                = false [90m-> null[0m[0m
       [31m-[0m[0m availability_zone                              = "us-east-1a" [90m-> null[0m[0m
       [31m-[0m[0m availability_zone_id                           = "use1-az6" [90m-> null[0m[0m
@@ -1055,7 +1362,7 @@ Terraform will perform the following actions:
       [31m-[0m[0m enable_lni_at_device_index                     = 0 [90m-> null[0m[0m
       [31m-[0m[0m enable_resource_name_dns_a_record_on_launch    = false [90m-> null[0m[0m
       [31m-[0m[0m enable_resource_name_dns_aaaa_record_on_launch = false [90m-> null[0m[0m
-      [31m-[0m[0m id                                             = "subnet-02fca3443e66ee5bd" [90m-> null[0m[0m
+      [31m-[0m[0m id                                             = "subnet-08fc131dd80711222" [90m-> null[0m[0m
       [31m-[0m[0m ipv6_native                                    = false [90m-> null[0m[0m
       [31m-[0m[0m map_customer_owned_ip_on_launch                = false [90m-> null[0m[0m
       [31m-[0m[0m map_public_ip_on_launch                        = false [90m-> null[0m[0m
@@ -1072,13 +1379,13 @@ Terraform will perform the following actions:
           [31m-[0m[0m "Project"     = "northstar"
           [31m-[0m[0m "Tier"        = "private"
         } [90m-> null[0m[0m
-      [31m-[0m[0m vpc_id                                         = "vpc-01366b5c6e027644c" [90m-> null[0m[0m
+      [31m-[0m[0m vpc_id                                         = "vpc-06e571fe81cac967a" [90m-> null[0m[0m
         [90m# (4 unchanged attributes hidden)[0m[0m
     }
 
 [1m  # module.vpc.aws_subnet.public[0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_subnet" "public" {
-      [31m-[0m[0m arn                                            = "arn:aws:ec2:us-east-1:345594594463:subnet/subnet-0ef6195d1ed5e01db" [90m-> null[0m[0m
+      [31m-[0m[0m arn                                            = "arn:aws:ec2:us-east-1:345594594463:subnet/subnet-075b68debcded2e8c" [90m-> null[0m[0m
       [31m-[0m[0m assign_ipv6_address_on_creation                = false [90m-> null[0m[0m
       [31m-[0m[0m availability_zone                              = "us-east-1a" [90m-> null[0m[0m
       [31m-[0m[0m availability_zone_id                           = "use1-az6" [90m-> null[0m[0m
@@ -1087,7 +1394,7 @@ Terraform will perform the following actions:
       [31m-[0m[0m enable_lni_at_device_index                     = 0 [90m-> null[0m[0m
       [31m-[0m[0m enable_resource_name_dns_a_record_on_launch    = false [90m-> null[0m[0m
       [31m-[0m[0m enable_resource_name_dns_aaaa_record_on_launch = false [90m-> null[0m[0m
-      [31m-[0m[0m id                                             = "subnet-0ef6195d1ed5e01db" [90m-> null[0m[0m
+      [31m-[0m[0m id                                             = "subnet-075b68debcded2e8c" [90m-> null[0m[0m
       [31m-[0m[0m ipv6_native                                    = false [90m-> null[0m[0m
       [31m-[0m[0m map_customer_owned_ip_on_launch                = false [90m-> null[0m[0m
       [31m-[0m[0m map_public_ip_on_launch                        = true [90m-> null[0m[0m
@@ -1104,26 +1411,26 @@ Terraform will perform the following actions:
           [31m-[0m[0m "Project"     = "northstar"
           [31m-[0m[0m "Tier"        = "public"
         } [90m-> null[0m[0m
-      [31m-[0m[0m vpc_id                                         = "vpc-01366b5c6e027644c" [90m-> null[0m[0m
+      [31m-[0m[0m vpc_id                                         = "vpc-06e571fe81cac967a" [90m-> null[0m[0m
         [90m# (4 unchanged attributes hidden)[0m[0m
     }
 
 [1m  # module.vpc.aws_vpc.this[0m will be [1m[31mdestroyed[0m
 [0m  [31m-[0m[0m resource "aws_vpc" "this" {
-      [31m-[0m[0m arn                                  = "arn:aws:ec2:us-east-1:345594594463:vpc/vpc-01366b5c6e027644c" [90m-> null[0m[0m
+      [31m-[0m[0m arn                                  = "arn:aws:ec2:us-east-1:345594594463:vpc/vpc-06e571fe81cac967a" [90m-> null[0m[0m
       [31m-[0m[0m assign_generated_ipv6_cidr_block     = false [90m-> null[0m[0m
       [31m-[0m[0m cidr_block                           = "10.0.0.0/16" [90m-> null[0m[0m
-      [31m-[0m[0m default_network_acl_id               = "acl-00a5d455f509ca9c8" [90m-> null[0m[0m
-      [31m-[0m[0m default_route_table_id               = "rtb-0a8c5d294e2f3937a" [90m-> null[0m[0m
-      [31m-[0m[0m default_security_group_id            = "sg-0bcf761efc01dbb99" [90m-> null[0m[0m
+      [31m-[0m[0m default_network_acl_id               = "acl-096fd50c219b734af" [90m-> null[0m[0m
+      [31m-[0m[0m default_route_table_id               = "rtb-03b57d8185889c6be" [90m-> null[0m[0m
+      [31m-[0m[0m default_security_group_id            = "sg-05fff3b6126a042a8" [90m-> null[0m[0m
       [31m-[0m[0m dhcp_options_id                      = "dopt-000e53e00af1a4963" [90m-> null[0m[0m
       [31m-[0m[0m enable_dns_hostnames                 = true [90m-> null[0m[0m
       [31m-[0m[0m enable_dns_support                   = true [90m-> null[0m[0m
       [31m-[0m[0m enable_network_address_usage_metrics = false [90m-> null[0m[0m
-      [31m-[0m[0m id                                   = "vpc-01366b5c6e027644c" [90m-> null[0m[0m
+      [31m-[0m[0m id                                   = "vpc-06e571fe81cac967a" [90m-> null[0m[0m
       [31m-[0m[0m instance_tenancy                     = "default" [90m-> null[0m[0m
       [31m-[0m[0m ipv6_netmask_length                  = 0 [90m-> null[0m[0m
-      [31m-[0m[0m main_route_table_id                  = "rtb-0a8c5d294e2f3937a" [90m-> null[0m[0m
+      [31m-[0m[0m main_route_table_id                  = "rtb-03b57d8185889c6be" [90m-> null[0m[0m
       [31m-[0m[0m owner_id                             = "345594594463" [90m-> null[0m[0m
       [31m-[0m[0m tags                                 = {
           [31m-[0m[0m "Name" = "northstar-dev-vpc"
@@ -1137,81 +1444,92 @@ Terraform will perform the following actions:
         [90m# (4 unchanged attributes hidden)[0m[0m
     }
 
-[1mPlan:[0m [0m0 to add, 0 to change, 28 to destroy.
+[1mPlan:[0m [0m0 to add, 0 to change, 33 to destroy.
 
 Changes to Outputs:
   [31m-[0m[0m data_engineer_role_arn = "arn:aws:iam::345594594463:role/northstar-dev-DataEngineer" [90m-> null[0m[0m
+  [31m-[0m[0m feature_group_name     = "northstar-dev-customer-features" [90m-> null[0m[0m
   [31m-[0m[0m ml_engineer_role_arn   = "arn:aws:iam::345594594463:role/northstar-dev-MLEngineer" [90m-> null[0m[0m
   [31m-[0m[0m model_monitor_role_arn = "arn:aws:iam::345594594463:role/northstar-dev-ModelMonitor" [90m-> null[0m[0m
-  [31m-[0m[0m public_subnet_id       = "subnet-0ef6195d1ed5e01db" [90m-> null[0m[0m
+  [31m-[0m[0m public_subnet_id       = "subnet-075b68debcded2e8c" [90m-> null[0m[0m
   [31m-[0m[0m s3_bucket_name         = "northstar-dev-data-345594594463" [90m-> null[0m[0m
-  [31m-[0m[0m sagemaker_domain_id    = "d-hpoi90inistn" [90m-> null[0m[0m
-  [31m-[0m[0m vpc_id                 = "vpc-01366b5c6e027644c" [90m-> null[0m[0m
-[0m[1mmodule.iam.aws_iam_role_policy_attachment.ml_engineer: Destroying... [id=northstar-dev-MLEngineer-20261003194359214800000002][0m[0m
-[0m[1mmodule.vpc.aws_route_table_association.private: Destroying... [id=rtbassoc-0854d383826664028][0m[0m
-[0m[1mmodule.iam.aws_iam_role_policy_attachment.model_monitor: Destroying... [id=northstar-dev-ModelMonitor-20261003194359194800000001][0m[0m
+  [31m-[0m[0m sagemaker_domain_id    = "d-frbsodboab7a" [90m-> null[0m[0m
+  [31m-[0m[0m vpc_id                 = "vpc-06e571fe81cac967a" [90m-> null[0m[0m
+[0m[1mmodule.vpc.aws_route_table_association.private: Destroying... [id=rtbassoc-07475f0f612648d8d][0m[0m
+[0m[1mmodule.iam.aws_iam_role_policy_attachment.model_monitor: Destroying... [id=northstar-dev-ModelMonitor-20261004005037586000000002][0m[0m
 [0m[1mmodule.storage.aws_s3_bucket_public_access_block.data: Destroying... [id=northstar-dev-data-345594594463][0m[0m
-[0m[1mmodule.vpc.aws_route_table_association.public: Destroying... [id=rtbassoc-03aa066cb324d04c5][0m[0m
-[0m[1mmodule.iam.aws_iam_role_policy_attachment.data_engineer: Destroying... [id=northstar-dev-DataEngineer-20261003194359232200000003][0m[0m
+[0m[1mmodule.vpc.aws_route_table_association.public: Destroying... [id=rtbassoc-007a3f802be98b0d4][0m[0m
+[0m[1mmodule.iam.aws_iam_role_policy_attachment.ml_engineer: Destroying... [id=northstar-dev-MLEngineer-20261004005037600100000003][0m[0m
 [0m[1mmodule.storage.aws_s3_bucket_server_side_encryption_configuration.data: Destroying... [id=northstar-dev-data-345594594463][0m[0m
-[0m[1mmodule.vpc.aws_security_group.glue: Destroying... [id=sg-0704ee177cf4f3368][0m[0m
-[0m[1mmodule.sagemaker.aws_sagemaker_user_profile.ml_engineer: Destroying... [id=arn:aws:sagemaker:us-east-1:345594594463:user-profile/d-hpoi90inistn/MLEngineer][0m[0m
+[0m[1mmodule.glue.aws_glue_job.transform: Destroying... [id=northstar-dev-transform][0m[0m
+[0m[1mmodule.glue.aws_glue_job.feature_engineer: Destroying... [id=northstar-dev-feature-engineer][0m[0m
+[0m[1mmodule.sagemaker.aws_sagemaker_user_profile.ml_engineer: Destroying... [id=arn:aws:sagemaker:us-east-1:345594594463:user-profile/d-frbsodboab7a/MLEngineer][0m[0m
 [0m[1mmodule.storage.aws_s3_bucket_lifecycle_configuration.data[0]: Destroying... [id=northstar-dev-data-345594594463][0m[0m
-[0m[1mmodule.iam.aws_iam_role_policy_attachment.ml_engineer: Destruction complete after 0s[0m
+[0m[1mmodule.iam.aws_iam_role_policy_attachment.ml_engineer: Destruction complete after 1s[0m
+[0m[1mmodule.glue.aws_glue_crawler.raw: Destroying... [id=northstar-dev-raw-crawler][0m[0m
+[0m[1mmodule.storage.aws_s3_bucket_server_side_encryption_configuration.data: Destruction complete after 1s[0m
+[0m[1mmodule.iam.aws_iam_role_policy_attachment.data_engineer: Destroying... [id=northstar-dev-DataEngineer-20261004005037582400000001][0m[0m
+[0m[1mmodule.iam.aws_iam_role_policy_attachment.model_monitor: Destruction complete after 1s[0m
 [0m[1mmodule.iam.aws_iam_policy.ml_engineer: Destroying... [id=arn:aws:iam::345594594463:policy/northstar-dev-MLEngineerPolicy][0m[0m
-[0m[1mmodule.iam.aws_iam_role_policy_attachment.data_engineer: Destruction complete after 0s[0m
-[0m[1mmodule.iam.aws_iam_role_policy_attachment.model_monitor: Destruction complete after 0s[0m
-[0m[1mmodule.iam.aws_iam_policy.data_engineer: Destroying... [id=arn:aws:iam::345594594463:policy/northstar-dev-DataEngineerPolicy][0m[0m
-[0m[1mmodule.storage.aws_s3_bucket_server_side_encryption_configuration.data: Destruction complete after 0s[0m
-[0m[1mmodule.iam.aws_iam_role.data_engineer: Destroying... [id=northstar-dev-DataEngineer][0m[0m
+[0m[1mmodule.glue.aws_glue_job.transform: Destruction complete after 1s[0m
 [0m[1mmodule.iam.aws_iam_role.model_monitor: Destroying... [id=northstar-dev-ModelMonitor][0m[0m
-[0m[1mmodule.iam.aws_iam_policy.ml_engineer: Destruction complete after 0s[0m
+[0m[1mmodule.glue.aws_glue_job.feature_engineer: Destruction complete after 1s[0m
 [0m[1mmodule.iam.aws_iam_policy.model_monitor: Destroying... [id=arn:aws:iam::345594594463:policy/northstar-dev-ModelMonitorPolicy][0m[0m
-[0m[1mmodule.vpc.aws_route_table_association.public: Destruction complete after 0s[0m
-[0m[1mmodule.vpc.aws_route_table.public: Destroying... [id=rtb-03a438299d58e933f][0m[0m
-[0m[1mmodule.storage.aws_s3_bucket_public_access_block.data: Destruction complete after 0s[0m
-[0m[1mmodule.vpc.aws_route_table_association.private: Destruction complete after 0s[0m
-[0m[1mmodule.vpc.aws_route_table.private: Destroying... [id=rtb-023a4f55832400673][0m[0m
-[0m[1mmodule.iam.aws_iam_policy.data_engineer: Destruction complete after 0s[0m
-[0m[1mmodule.iam.aws_iam_role.data_engineer: Destruction complete after 0s[0m
-[0m[1mmodule.iam.aws_iam_role.model_monitor: Destruction complete after 0s[0m
+[0m[1mmodule.iam.aws_iam_role_policy_attachment.data_engineer: Destruction complete after 0s[0m
+[0m[1mmodule.feature_store.aws_sagemaker_feature_group.this: Destroying... [id=northstar-dev-customer-features][0m[0m
+[0m[1mmodule.glue.aws_glue_crawler.raw: Destruction complete after 0s[0m
+[0m[1mmodule.glue.aws_glue_connection.this: Destroying... [id=345594594463:northstar-dev-vpc-connection][0m[0m
+[0m[1mmodule.storage.aws_s3_bucket_public_access_block.data: Destruction complete after 1s[0m
+[0m[1mmodule.iam.aws_iam_policy.data_engineer: Destroying... [id=arn:aws:iam::345594594463:policy/northstar-dev-DataEngineerPolicy][0m[0m
+[0m[1mmodule.vpc.aws_route_table_association.private: Destruction complete after 1s[0m
+[0m[1mmodule.glue.aws_glue_catalog_database.this: Destroying... [id=345594594463:northstar_dev][0m[0m
+[0m[1mmodule.vpc.aws_route_table_association.public: Destruction complete after 1s[0m
+[0m[1mmodule.vpc.aws_route_table.private: Destroying... [id=rtb-06e7aafa90b000b2d][0m[0m
+[0m[1mmodule.iam.aws_iam_policy.ml_engineer: Destruction complete after 0s[0m
+[0m[1mmodule.vpc.aws_route_table.public: Destroying... [id=rtb-0b58a8e6d971854e3][0m[0m
 [0m[1mmodule.iam.aws_iam_policy.model_monitor: Destruction complete after 0s[0m
-[0m[1mmodule.storage.aws_s3_bucket_lifecycle_configuration.data[0]: Destruction complete after 0s[0m
+[0m[1mmodule.iam.aws_iam_role.model_monitor: Destruction complete after 0s[0m
+[0m[1mmodule.glue.aws_glue_connection.this: Destruction complete after 0s[0m
+[0m[1mmodule.glue.aws_glue_catalog_database.this: Destruction complete after 0s[0m
+[0m[1mmodule.iam.aws_iam_policy.data_engineer: Destruction complete after 0s[0m
+[0m[1mmodule.storage.aws_s3_bucket_lifecycle_configuration.data[0]: Destruction complete after 1s[0m
 [0m[1mmodule.storage.aws_s3_bucket_versioning.data: Destroying... [id=northstar-dev-data-345594594463][0m[0m
 [0m[1mmodule.storage.aws_s3_bucket_versioning.data: Destruction complete after 0s[0m
-[0m[1mmodule.storage.aws_s3_bucket.data: Destroying... [id=northstar-dev-data-345594594463][0m[0m
-[0m[1mmodule.vpc.aws_security_group.glue: Destruction complete after 0s[0m
-[0m[1mmodule.storage.aws_s3_bucket.data: Destruction complete after 1s[0m
 [0m[1mmodule.vpc.aws_route_table.private: Destruction complete after 1s[0m
-[0m[1mmodule.vpc.aws_nat_gateway.this[0]: Destroying... [id=nat-057b42199f77b5b4b][0m[0m
+[0m[1mmodule.vpc.aws_nat_gateway.this[0]: Destroying... [id=nat-0b2dbf3086b78a145][0m[0m
 [0m[1mmodule.vpc.aws_route_table.public: Destruction complete after 1s[0m
-[0m[1mmodule.sagemaker.aws_sagemaker_user_profile.ml_engineer: Destruction complete after 6s[0m
-[0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Destroying... [id=d-hpoi90inistn][0m[0m
-[0m[1mmodule.vpc.aws_nat_gateway.this[0]: Still destroying... [id=nat-057b42199f77b5b4b, 00m10s elapsed][0m[0m
-[0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Still destroying... [id=d-hpoi90inistn, 00m10s elapsed][0m[0m
-[0m[1mmodule.vpc.aws_nat_gateway.this[0]: Still destroying... [id=nat-057b42199f77b5b4b, 00m20s elapsed][0m[0m
-[0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Still destroying... [id=d-hpoi90inistn, 00m20s elapsed][0m[0m
-[0m[1mmodule.vpc.aws_nat_gateway.this[0]: Still destroying... [id=nat-057b42199f77b5b4b, 00m30s elapsed][0m[0m
-[0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Still destroying... [id=d-hpoi90inistn, 00m30s elapsed][0m[0m
-[0m[1mmodule.vpc.aws_nat_gateway.this[0]: Still destroying... [id=nat-057b42199f77b5b4b, 00m40s elapsed][0m[0m
-[0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Still destroying... [id=d-hpoi90inistn, 00m40s elapsed][0m[0m
-[0m[1mmodule.vpc.aws_nat_gateway.this[0]: Still destroying... [id=nat-057b42199f77b5b4b, 00m50s elapsed][0m[0m
-[0m[1mmodule.vpc.aws_nat_gateway.this[0]: Destruction complete after 51s[0m
-[0m[1mmodule.vpc.aws_internet_gateway.this: Destroying... [id=igw-082b0884998f227a1][0m[0m
-[0m[1mmodule.vpc.aws_eip.nat[0]: Destroying... [id=eipalloc-00f2c036c651e94bf][0m[0m
-[0m[1mmodule.vpc.aws_subnet.public: Destroying... [id=subnet-0ef6195d1ed5e01db][0m[0m
-[0m[1mmodule.vpc.aws_internet_gateway.this: Destruction complete after 1s[0m
+[0m[1mmodule.feature_store.aws_sagemaker_feature_group.this: Destruction complete after 2s[0m
+[0m[1mmodule.iam.aws_iam_role.data_engineer: Destroying... [id=northstar-dev-DataEngineer][0m[0m
+[0m[1mmodule.storage.aws_s3_bucket.data: Destroying... [id=northstar-dev-data-345594594463][0m[0m
+[0m[1mmodule.iam.aws_iam_role.data_engineer: Destruction complete after 0s[0m
+[0m[1mmodule.storage.aws_s3_bucket.data: Destruction complete after 0s[0m
+[0m[1mmodule.sagemaker.aws_sagemaker_user_profile.ml_engineer: Destruction complete after 4s[0m
+[0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Destroying... [id=d-frbsodboab7a][0m[0m
+[0m[1mmodule.vpc.aws_nat_gateway.this[0]: Still destroying... [id=nat-0b2dbf3086b78a145, 00m10s elapsed][0m[0m
+[0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Still destroying... [id=d-frbsodboab7a, 00m10s elapsed][0m[0m
+[0m[1mmodule.vpc.aws_nat_gateway.this[0]: Still destroying... [id=nat-0b2dbf3086b78a145, 00m20s elapsed][0m[0m
+[0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Still destroying... [id=d-frbsodboab7a, 00m20s elapsed][0m[0m
+[0m[1mmodule.vpc.aws_nat_gateway.this[0]: Still destroying... [id=nat-0b2dbf3086b78a145, 00m30s elapsed][0m[0m
+[0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Still destroying... [id=d-frbsodboab7a, 00m30s elapsed][0m[0m
+[0m[1mmodule.vpc.aws_nat_gateway.this[0]: Still destroying... [id=nat-0b2dbf3086b78a145, 00m40s elapsed][0m[0m
+[0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Still destroying... [id=d-frbsodboab7a, 00m40s elapsed][0m[0m
+[0m[1mmodule.vpc.aws_nat_gateway.this[0]: Still destroying... [id=nat-0b2dbf3086b78a145, 00m50s elapsed][0m[0m
+[0m[1mmodule.vpc.aws_nat_gateway.this[0]: Destruction complete after 50s[0m
+[0m[1mmodule.vpc.aws_internet_gateway.this: Destroying... [id=igw-0cbf1bf688ee18f84][0m[0m
+[0m[1mmodule.vpc.aws_subnet.public: Destroying... [id=subnet-075b68debcded2e8c][0m[0m
+[0m[1mmodule.vpc.aws_eip.nat[0]: Destroying... [id=eipalloc-0dd179f0de6a87619][0m[0m
+[0m[1mmodule.vpc.aws_internet_gateway.this: Destruction complete after 0s[0m
 [0m[1mmodule.vpc.aws_subnet.public: Destruction complete after 1s[0m
+[0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Still destroying... [id=d-frbsodboab7a, 00m50s elapsed][0m[0m
 [0m[1mmodule.vpc.aws_eip.nat[0]: Destruction complete after 1s[0m
-[0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Still destroying... [id=d-hpoi90inistn, 00m50s elapsed][0m[0m
-[0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Destruction complete after 54s[0m
+[0m[1mmodule.sagemaker.aws_sagemaker_domain.this: Destruction complete after 53s[0m
 [0m[1mmodule.iam.aws_iam_role.ml_engineer: Destroying... [id=northstar-dev-MLEngineer][0m[0m
-[0m[1mmodule.vpc.aws_subnet.private: Destroying... [id=subnet-02fca3443e66ee5bd][0m[0m
-[0m[1mmodule.vpc.aws_security_group.this: Destroying... [id=sg-05c0c20e9811658cd][0m[0m
-[0m[1mmodule.iam.aws_iam_role.ml_engineer: Destruction complete after 0s[0m
+[0m[1mmodule.vpc.aws_subnet.private: Destroying... [id=subnet-08fc131dd80711222][0m[0m
+[0m[1mmodule.vpc.aws_security_group.this: Destroying... [id=sg-0afbadbf306086a79][0m[0m
+[0m[1mmodule.iam.aws_iam_role.ml_engineer: Destruction complete after 1s[0m
 [0m[1mmodule.vpc.aws_subnet.private: Destruction complete after 1s[0m
 [0m[1mmodule.vpc.aws_security_group.this: Destruction complete after 1s[0m
-[0m[1mmodule.vpc.aws_vpc.this: Destroying... [id=vpc-01366b5c6e027644c][0m[0m
-[0m[1mmodule.vpc.aws_vpc.this: Destruction complete after 0s[0m
+[0m[1mmodule.vpc.aws_vpc.this: Destroying... [id=vpc-06e571fe81cac967a][0m[0m
+[0m[1mmodule.vpc.aws_vpc.this: Destruction complete after 1s[0m
 [0m[1m[32m
-Destroy complete! Resources: 28 destroyed.[0m
+Destroy complete! Resources: 33 destroyed.[0m
