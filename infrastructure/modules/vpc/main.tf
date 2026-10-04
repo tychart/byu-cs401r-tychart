@@ -10,8 +10,7 @@
 #   aws_route_table              northstar-dev-public-rt    0.0.0.0/0 -> igw
 #   aws_route_table              northstar-dev-private-rt   0.0.0.0/0 -> nat           (Lab 2)
 #   aws_route_table_association  attaches each subnet to its own route table
-#   aws_security_group           northstar-dev-sagemaker-sg
-#   aws_security_group           northstar-dev-glue-sg      self-referencing           (Lab 2)
+#   aws_security_group           northstar-dev-sagemaker-sg  self-referencing ingress   (Lab 2)
 #
 # Every name is built from var.project and var.environment — nothing under
 # modules/ hardcodes a project-environment literal.
@@ -156,7 +155,7 @@ resource "aws_route_table_association" "private" {
 # can pull container images, reach S3, and serve its UI.
 resource "aws_security_group" "this" {
   name        = "${var.project}-${var.environment}-sagemaker-sg"
-  description = "SageMaker Studio traffic: inbound from the VPC CIDR only"
+  description = "SageMaker Studio and Glue traffic: inbound from inside the VPC only"
   vpc_id      = aws_vpc.this.id
 
   ingress {
@@ -165,6 +164,19 @@ resource "aws_security_group" "this" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = [var.vpc_cidr]
+  }
+
+  # New in Lab 2. Glue refuses to place a job's ENIs inside a VPC unless one of
+  # the attached security groups opens all ports and all protocols TO ITSELF. A
+  # rule whose source is the VPC CIDR is equivalent in effect but does not pass
+  # that check -- the source has to literally be this security group, which is
+  # what `self = true` writes. The Glue NETWORK connection attaches this SG.
+  ingress {
+    description = "Glue worker-to-worker traffic (self-reference, all ports)"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    self        = true
   }
 
   egress {
@@ -177,39 +189,5 @@ resource "aws_security_group" "this" {
 
   tags = {
     Name = "${var.project}-${var.environment}-sagemaker-sg"
-  }
-}
-
-# New in Lab 2. AWS Glue refuses to place a job's ENIs unless one of the
-# attached security groups opens all ports and all protocols TO ITSELF. A rule
-# whose source is the VPC CIDR does not satisfy that check -- the source has to
-# literally be this security group, which is what `self = true` writes. Glue
-# attaches this SG when the modules/glue/ jobs run inside the private subnet.
-resource "aws_security_group" "glue" {
-  name        = "${var.project}-${var.environment}-glue-sg"
-  description = "Glue job ENIs: self-referencing all-ports ingress required inside a VPC"
-  vpc_id      = aws_vpc.this.id
-
-  ingress {
-    description = "Glue worker-to-worker traffic (self-reference, all ports)"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    self        = true
-  }
-
-  # Declared explicitly so Terraform does not revoke AWS's default egress
-  # rule. Glue needs it to reach S3, the Glue API, and CloudWatch Logs through
-  # the NAT Gateway.
-  egress {
-    description = "All outbound traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "${var.project}-${var.environment}-glue-sg"
   }
 }

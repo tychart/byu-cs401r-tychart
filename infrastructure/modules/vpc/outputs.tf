@@ -39,8 +39,3 @@ output "nat_gateway_id" {
   description = "ID of the NAT Gateway, or null when enable_nat_gateway is false"
   value       = one(aws_nat_gateway.this[*].id)
 }
-
-output "glue_security_group_id" {
-  description = "ID of the self-referencing security group Glue jobs attach inside the VPC"
-  value       = aws_security_group.glue.id
-}

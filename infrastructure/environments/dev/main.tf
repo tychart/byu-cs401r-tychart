@@ -33,6 +33,26 @@ module "iam" {
   environment = var.environment
 }
 
+module "glue" {
+  source      = "../../modules/glue"
+  project     = var.project
+  environment = var.environment
+
+  bucket_name            = module.storage.bucket_name
+  data_engineer_role_arn = module.iam.data_engineer_role_arn
+
+  # The Glue NETWORK connection places job workers in the private subnet, using
+  # the SageMaker SG (which carries the self-referencing all-ports rule Glue
+  # requires). Both must be passed through so the connection can be created.
+  private_subnet_id  = module.vpc.private_subnet_id
+  security_group_ids = [module.vpc.security_group_id]
+  availability_zone  = var.availability_zone
+
+  # path.root is infrastructure/environments/dev, so three levels up is the
+  # repo root that holds glue-scripts/. Terraform uploads the file and hashes it.
+  transform_script_path = "${path.root}/../../../glue-scripts/transform.py"
+}
+
 module "sagemaker" {
   source             = "../../modules/sagemaker"
   project            = var.project
