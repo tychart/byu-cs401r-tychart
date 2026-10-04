@@ -51,11 +51,11 @@ Tasks 4 and 5 - Deliverables and repo quality (30 pts)
   PASS  infrastructure/modules/glue/main.tf present          
   PASS  infrastructure/modules/feature_store/main.tf present 
   PASS  extend output shows Apply complete                   
-  PASS  data contract has Schema section                     
-  PASS  data contract has Quality Guarantee section          
+  PASS  data contract has Schema section
+  PASS  data contract has Quality Guarantee section
   PASS  data contract has SLA section                        
-  PASS  data contract has Versioning section                 
-  PASS  terraform fmt clean                                  
+  PASS  data contract has Versioning section
+  PASS  terraform fmt clean
 
 Summary: 47 passed, 0 failed
 All checks passed. Remember to run scripts/teardown-lab2.sh after you submit.
