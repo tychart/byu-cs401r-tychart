@@ -67,8 +67,18 @@ def split_windows(df):
     Everything downstream depends on this being right. Features come only
     from history; the label comes only from holdout.
     """
-    # TODO: your implementation here
-    raise NotImplementedError("split_windows is not implemented")
+    # Anchor both boundaries to the module constants. Using today() would make
+    # the features change on every run; using max(purchase_date) would drag the
+    # outcome window into the features -- exactly the leakage this split exists
+    # to prevent.
+    cutoff = F.to_date(F.lit(FEATURE_CUTOFF))
+    snapshot = F.to_date(F.lit(SNAPSHOT))
+
+    history = df.filter(F.col("purchase_date") <= cutoff)
+    holdout = df.filter(
+        (F.col("purchase_date") > cutoff) & (F.col("purchase_date") <= snapshot)
+    )
+    return history, holdout
 
 
 def compute_rfm_features(history):
@@ -97,8 +107,64 @@ def compute_rfm_features(history):
     Watch the divide-by-zero in avg_basket_size_6m: a customer with no
     orders in the last 180 days needs a guarded denominator.
     """
-    # TODO: your implementation here
-    raise NotImplementedError("compute_rfm_features is not implemented")
+    # Every window is a fixed number of days back from T, not from the data.
+    cutoff = F.to_date(F.lit(FEATURE_CUTOFF))
+    window_30 = F.date_sub(cutoff, 30)
+    window_90 = F.date_sub(cutoff, 90)
+    window_180 = F.date_sub(cutoff, 180)
+
+    # Counting rows gives order counts, which is why this has to run on the
+    # transaction-grain history rather than on one row per customer.
+    orders_30 = F.sum(F.when(F.col("purchase_date") > window_30, 1).otherwise(0))
+    orders_90 = F.sum(F.when(F.col("purchase_date") > window_90, 1).otherwise(0))
+    orders_180 = F.sum(F.when(F.col("purchase_date") > window_180, 1).otherwise(0))
+
+    return history.groupBy("customer_id").agg(
+        F.datediff(cutoff, F.max("purchase_date")).cast("double")
+        .alias("days_since_last_purchase"),
+        F.datediff(cutoff, F.min("purchase_date")).cast("double")
+        .alias("customer_tenure_days"),
+        orders_30.cast("double").alias("purchase_frequency_30d"),
+        orders_90.cast("double").alias("purchase_frequency_90d"),
+        orders_180.cast("double").alias("purchase_frequency_180d"),
+        F.avg("order_value").cast("double").alias("avg_order_value"),
+        F.sum(
+            F.when(F.col("purchase_date") > window_90, F.col("order_value"))
+            .otherwise(F.lit(0.0))
+        )
+        .cast("double")
+        .alias("total_spend_90d"),
+        F.sum("order_value").cast("double").alias("total_lifetime_value"),
+        # Guarded denominator: a customer with no orders in the last 180 days
+        # would otherwise divide by zero.
+        F.when(
+            orders_180 > 0,
+            F.sum(
+                F.when(F.col("purchase_date") > window_180, F.col("num_items"))
+                .otherwise(F.lit(0))
+            )
+            / orders_180,
+        )
+        .otherwise(F.lit(0.0))
+        .cast("double")
+        .alias("avg_basket_size_6m"),
+        # 'unknown' is the imputed placeholder, not a real category. Counting it
+        # would push the score above 1.0.
+        (
+            F.countDistinct(
+                F.when(
+                    F.col("product_category") != "unknown",
+                    F.col("product_category"),
+                )
+            )
+            / F.lit(N_CATEGORIES)
+        )
+        .cast("double")
+        .alias("category_diversity_score"),
+        F.avg(F.when(F.col("channel") == "online", 1.0).otherwise(0.0))
+        .cast("double")
+        .alias("online_to_store_ratio"),
+    )
 
 
 def assign_loyalty_tier(df):
@@ -112,8 +178,16 @@ def assign_loyalty_tier(df):
     Thresholds are the TIER_* constants. All four tiers must appear in your
     output; if one is empty, your thresholds or your LTV aggregation is wrong.
     """
-    # TODO: your implementation here
-    raise NotImplementedError("assign_loyalty_tier is not implemented")
+    # Thresholds are half-open on the upper bound so 500 lands in Silver, not
+    # Bronze, and so on. total_lifetime_value is a Fractional feature, so the
+    # comparison is against the TIER_* floats.
+    return df.withColumn(
+        "loyalty_tier",
+        F.when(F.col("total_lifetime_value") < TIER_BRONZE_MAX, "Bronze")
+        .when(F.col("total_lifetime_value") < TIER_SILVER_MAX, "Silver")
+        .when(F.col("total_lifetime_value") < TIER_GOLD_MAX, "Gold")
+        .otherwise("Platinum"),
+    )
 
 
 def compute_churn_proxy(df):
@@ -131,8 +205,32 @@ def compute_churn_proxy(df):
     to beat. A trained model that cannot outperform three lines of rules has
     not earned its deployment.
     """
-    # TODO: your implementation here
-    raise NotImplementedError("compute_churn_proxy is not implemented")
+    # The bands are defined by the spec; the scaling inside each band is what
+    # keeps the score from collapsing to three constants. The result is clamped
+    # to [0, 1] so the feature-group assertion always holds.
+    recency = F.col("days_since_last_purchase")
+    freq_30d = F.col("purchase_frequency_30d")
+
+    score = (
+        # High (0.7-1.0): recency > 60 days. purchase_frequency_30d == 0 is
+        # implied, but stated because the spec states it. 180+ days pins 1.0.
+        F.when(
+            (recency > 60) & (freq_30d == 0),
+            0.7 + 0.3 * F.least(F.lit(1.0), (recency - 60) / 120.0),
+        )
+        # Medium (0.4-0.7): recency > 30 days.
+        .when(
+            recency > 30,
+            0.4 + 0.3 * ((recency - 30) / 30.0),
+        )
+        # Low (0.0-0.4): a very recent purchase scores near zero.
+        .otherwise(0.4 * (recency / 30.0))
+    )
+
+    return df.withColumn(
+        "churn_risk_score",
+        F.greatest(F.lit(0.0), F.least(F.lit(1.0), score)).cast("double"),
+    )
 
 
 def attach_churn_label(features, holdout):
@@ -145,8 +243,21 @@ def attach_churn_label(features, holdout):
     holdout window and nowhere else - that separation is what makes the
     resulting model honest.
     """
-    # TODO: your implementation here
-    raise NotImplementedError("attach_churn_label is not implemented")
+    # Left-join the customers who DID purchase in the outcome window. Anyone
+    # absent from that list made no purchase after T, which is the definition of
+    # churn here. The label comes from this window and nowhere else.
+    buyers = holdout.select("customer_id").distinct().withColumn(
+        "_purchased_in_holdout", F.lit(1)
+    )
+
+    labeled = features.join(buyers, on="customer_id", how="left")
+
+    return labeled.withColumn(
+        "churn_label",
+        F.when(F.col("_purchased_in_holdout").isNull(), 1)
+        .otherwise(0)
+        .cast("int"),
+    ).drop("_purchased_in_holdout")
 
 
 def ingest_to_feature_store(rows, feature_group_name, region, event_time):
