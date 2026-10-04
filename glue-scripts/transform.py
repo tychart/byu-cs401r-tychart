@@ -63,8 +63,35 @@ def cast_types(df):
     key for every downstream feature, so a row without it cannot be
     attributed to anyone.
     """
-    # TODO: your implementation here
-    raise NotImplementedError("cast_types is not implemented")
+    # 1. Trim every column. A customer_id of "  CUST-10000001 " is not null,
+    #    but it will not group or join correctly either, and the bug stays
+    #    invisible until your feature counts come out slightly wrong.
+    for c in df.columns:
+        df = df.withColumn(c, F.trim(F.col(c).cast("string")))
+
+    # 2. Empty string -> real null. CSV gives us "" where we want None, and
+    #    Spark treats the two as different values.
+    for c in df.columns:
+        df = df.withColumn(c, F.when(F.col(c) == "", None).otherwise(F.col(c)))
+
+    # 3. Parse purchase_date from BOTH formats. to_date returns null on a
+    #    mismatch instead of raising, so parsing only the ISO form would
+    #    silently null out the ~3% MM/DD/YYYY rows (and then drop them).
+    df = df.withColumn(
+        "purchase_date",
+        F.coalesce(
+            F.to_date(F.col("purchase_date"), "yyyy-MM-dd"),
+            F.to_date(F.col("purchase_date"), "MM/dd/yyyy"),
+        ),
+    )
+
+    # 4. Cast to the SCHEMA types. Selecting explicitly also keeps the dataset
+    #    to the published contract by dropping any crawler-injected extras.
+    df = df.select(*[F.col(c).cast(t).alias(c) for c, t in SCHEMA.items()])
+
+    # 5. customer_id is the join key for every downstream feature; a row
+    #    without it cannot be attributed to anyone.
+    return df.filter(F.col("customer_id").isNotNull())
 
 
 def impute_nulls(df):
@@ -79,8 +106,23 @@ def impute_nulls(df):
 
     Numeric columns: NUMERIC_COLS.  String columns: STRING_COLS.
     """
-    # TODO: your implementation here
-    raise NotImplementedError("impute_nulls is not implemented")
+    # Numeric columns: the median. Use the MEDIAN, not the mean -
+    # order_value is right-skewed, so a mean-imputed value sits above the
+    # typical order and inflates every monetary feature computed later.
+    dtypes = dict(df.dtypes)
+    for c in NUMERIC_COLS:
+        median = df.approxQuantile(c, [0.5], 0.0)[0]
+        if median is None:
+            continue
+        # num_items is an integer column; filling it with 3.7 would widen the
+        # schema to double and break the contract.
+        if dtypes.get(c) in ("int", "bigint", "smallint", "tinyint"):
+            median = int(round(median))
+        df = df.fillna({c: median})
+
+    # String columns: an explicit 'unknown' beats a null the next job has to
+    # special-case.
+    return df.fillna({c: "unknown" for c in STRING_COLS})
 
 
 def deduplicate(df):
@@ -101,8 +143,24 @@ def deduplicate(df):
     A window function with row_number() over a partition by transaction_id
     is the idiomatic approach.
     """
-    # TODO: your implementation here
-    raise NotImplementedError("deduplicate is not implemented")
+    # Partition by transaction_id and keep the first row. Deduplicating on
+    # customer_id instead would collapse a customer's whole purchase history to
+    # one row and make Task 3's RFM features impossible to compute.
+    #
+    # Ordering by purchase_date then order_value descending makes the choice
+    # deterministic when the same transaction lands twice, so re-running the
+    # job produces byte-identical output instead of depending on partition
+    # order. nulls_last guards the (should not happen) unparsed-date case.
+    window = Window.partitionBy("transaction_id").orderBy(
+        F.col("purchase_date").desc_nulls_last(),
+        F.col("order_value").desc_nulls_last(),
+    )
+
+    return (
+        df.withColumn("_row_number", F.row_number().over(window))
+        .filter(F.col("_row_number") == 1)
+        .drop("_row_number")
+    )
 
 
 def main():
