@@ -224,6 +224,24 @@ data "aws_iam_policy_document" "data_engineer" {
     resources = ["arn:aws:s3:::${var.project}-${var.environment}-data-*/artifacts/glue/*"]
   }
 
+  # Feature Store checks the bucket ACL before it accepts the offline store
+  # target, and writes offline-store objects WITH an ACL, so plain PutObject is
+  # not enough. Without these two, CreateFeatureGroup fails at apply time with
+  # "Invalid S3Uri provided" — even though the URI is correct.
+  statement {
+    sid       = "S3BucketAcl"
+    effect    = "Allow"
+    actions   = ["s3:GetBucketAcl"]
+    resources = ["arn:aws:s3:::${var.project}-${var.environment}-data-*"]
+  }
+
+  statement {
+    sid       = "S3FeatureOfflineStoreAcl"
+    effect    = "Allow"
+    actions   = ["s3:PutObjectAcl"]
+    resources = ["arn:aws:s3:::${var.project}-${var.environment}-data-*/features/*"]
+  }
+
   statement {
     sid       = "S3BucketList"
     effect    = "Allow"

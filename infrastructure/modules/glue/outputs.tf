@@ -25,3 +25,13 @@ output "transform_script_s3_uri" {
   description = "S3 URI of the uploaded transform script"
   value       = "s3://${aws_s3_object.transform_script.bucket}/${aws_s3_object.transform_script.key}"
 }
+
+output "feature_engineer_job_name" {
+  description = "Name of the processed -> features Glue job"
+  value       = aws_glue_job.feature_engineer.name
+}
+
+output "feature_engineer_script_s3_uri" {
+  description = "S3 URI of the uploaded feature engineering script"
+  value       = "s3://${aws_s3_object.feature_engineer_script.bucket}/${aws_s3_object.feature_engineer_script.key}"
+}

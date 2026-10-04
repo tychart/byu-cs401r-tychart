@@ -6,6 +6,8 @@
 #   aws_s3_object              artifacts/glue/transform.py    job script, uploaded by Terraform
 #   aws_glue_crawler           northstar-dev-raw-crawler      scans raw/customers/, registers `customers`
 #   aws_glue_job               northstar-dev-transform        Glue 4.0 Spark: raw -> processed
+#   aws_s3_object              artifacts/glue/feature_engineer.py  job script, uploaded by Terraform
+#   aws_glue_job               northstar-dev-feature-engineer  Glue 4.0 Spark: processed -> features + Feature Store
 #
 # Terraform creates *definitions*, not executions. `terraform apply` makes the
 # crawler and the job exist; you still run them yourself with
@@ -24,12 +26,15 @@ locals {
   crawler_name       = "${var.project}-${var.environment}-raw-crawler"
   connection_name    = "${var.project}-${var.environment}-vpc-connection"
   transform_job_name = "${var.project}-${var.environment}-transform"
+  feature_job_name   = "${var.project}-${var.environment}-feature-engineer"
 
   transform_script_key = "${var.artifacts_prefix}/transform.py"
+  feature_script_key   = "${var.artifacts_prefix}/feature_engineer.py"
 
   # Glue's default scratch space is a service-owned bucket the DataEngineer
   # role has no access to, so point --TempDir somewhere the role can write.
   transform_temp_dir = "s3://${var.bucket_name}/processed/_glue_temp/transform/"
+  feature_temp_dir   = "s3://${var.bucket_name}/features/_glue_temp/feature-engineer/"
 }
 
 # ── Catalog database ─────────────────────────────────────────────────────────
@@ -143,5 +148,54 @@ resource "aws_glue_job" "transform" {
 
   tags = {
     Name = local.transform_job_name
+  }
+}
+
+# ── Feature engineering ETL job (Task 3) ─────────────────────────────────────
+# Reads the processed Parquet directly — no crawler is needed here, because
+# Parquet carries its own schema. This job collapses the transaction grain to
+# one row per customer, writes features/customers/, and PutRecords each row
+# into the Feature Store.
+resource "aws_s3_object" "feature_engineer_script" {
+  bucket      = var.bucket_name
+  key         = local.feature_script_key
+  source      = var.feature_engineer_script_path
+  source_hash = filemd5(var.feature_engineer_script_path)
+}
+
+resource "aws_glue_job" "feature_engineer" {
+  name              = local.feature_job_name
+  role_arn          = var.data_engineer_role_arn
+  glue_version      = var.glue_version
+  worker_type       = var.worker_type
+  number_of_workers = var.number_of_workers
+  timeout           = var.job_timeout_minutes
+  max_retries       = 0
+
+  command {
+    name            = "glueetl"
+    script_location = "s3://${var.bucket_name}/${local.feature_script_key}"
+    python_version  = "3"
+  }
+
+  default_arguments = {
+    "--input_path"                       = "s3://${var.bucket_name}/${var.processed_prefix}"
+    "--output_path"                      = "s3://${var.bucket_name}/${var.features_prefix}"
+    "--feature_group_name"               = var.feature_group_name
+    "--region"                           = var.aws_region
+    "--TempDir"                          = local.feature_temp_dir
+    "--enable-continuous-cloudwatch-log" = "true"
+  }
+
+  connections = [aws_glue_connection.this.name]
+
+  execution_property {
+    max_concurrent_runs = 1
+  }
+
+  depends_on = [aws_s3_object.feature_engineer_script]
+
+  tags = {
+    Name = local.feature_job_name
   }
 }

@@ -36,3 +36,8 @@ output "sagemaker_domain_id" {
   description = "ID of the SageMaker Domain"
   value       = module.sagemaker.domain_id
 }
+
+output "feature_group_name" {
+  description = "Name of the SageMaker Feature Group the feature job writes into"
+  value       = module.feature_store.feature_group_name
+}

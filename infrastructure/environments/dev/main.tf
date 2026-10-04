@@ -50,7 +50,22 @@ module "glue" {
 
   # path.root is infrastructure/environments/dev, so three levels up is the
   # repo root that holds glue-scripts/. Terraform uploads the file and hashes it.
-  transform_script_path = "${path.root}/../../../glue-scripts/transform.py"
+  transform_script_path        = "${path.root}/../../../glue-scripts/transform.py"
+  feature_engineer_script_path = "${path.root}/../../../glue-scripts/feature_engineer.py"
+
+  # The feature job PutRecords into this group; the name comes from the
+  # feature_store module so the two can never drift apart.
+  feature_group_name = module.feature_store.feature_group_name
+  aws_region         = var.aws_region
+}
+
+module "feature_store" {
+  source      = "../../modules/feature_store"
+  project     = var.project
+  environment = var.environment
+
+  bucket_name            = module.storage.bucket_name
+  data_engineer_role_arn = module.iam.data_engineer_role_arn
 }
 
 module "sagemaker" {

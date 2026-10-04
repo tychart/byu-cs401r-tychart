@@ -59,6 +59,28 @@ variable "processed_prefix" {
   default     = "processed/customers/"
 }
 
+variable "features_prefix" {
+  description = "S3 prefix the feature engineering job writes its Parquet to"
+  type        = string
+  default     = "features/customers/"
+}
+
+variable "feature_engineer_script_path" {
+  description = "Local path to glue-scripts/feature_engineer.py; Terraform uploads it to S3"
+  type        = string
+}
+
+variable "feature_group_name" {
+  description = "SageMaker Feature Group the feature job writes records into"
+  type        = string
+}
+
+variable "aws_region" {
+  description = "Region passed to the feature job so its Feature Store client targets the right endpoint"
+  type        = string
+  default     = "us-east-1"
+}
+
 variable "artifacts_prefix" {
   description = "S3 prefix that holds Glue job scripts (no trailing slash)"
   type        = string
