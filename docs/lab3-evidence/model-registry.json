@@ -1,0 +1,56 @@
+{
+  "ModelPackageGroupName": "northstar-churn-models",
+  "Versions": [
+    {
+      "ModelPackageArn": "arn:aws:sagemaker:us-east-1:345594594463:model-package/northstar-churn-models/3",
+      "ModelPackageVersion": 3,
+      "ModelApprovalStatus": "PendingManualApproval",
+      "CreationTime": "2026-10-16 01:57:31.191000-06:00",
+      "ModelPackageDescription": "NorthStar churn XGBoost. AUC=0.7773, precision@top10=0.7233, recall@top10=0.3288, lift 95% CI [0.0347, 0.0738]. Trained 2026-10-16.",
+      "CustomerMetadataProperties": {
+        "auc_roc": "0.7773",
+        "baseline_auc": "0.7232",
+        "lift_ci_high": "0.0738",
+        "lift_ci_low": "0.0347",
+        "mlflow_run_id": "4afe0e63a8c14bb697b6ab80cba7d727",
+        "precision_top10": "0.7233",
+        "recall_top10": "0.3288",
+        "xgboost_version": "3.4.1"
+      }
+    },
+    {
+      "ModelPackageArn": "arn:aws:sagemaker:us-east-1:345594594463:model-package/northstar-churn-models/2",
+      "ModelPackageVersion": 2,
+      "ModelApprovalStatus": "PendingManualApproval",
+      "CreationTime": "2026-10-16 01:56:38.998000-06:00",
+      "ModelPackageDescription": "NorthStar churn XGBoost. AUC=0.7711, precision@top10=0.7067, recall@top10=0.3212, lift 95% CI [0.0279, 0.0685]. Trained 2026-10-16.",
+      "CustomerMetadataProperties": {
+        "auc_roc": "0.7711",
+        "baseline_auc": "0.7232",
+        "lift_ci_high": "0.0685",
+        "lift_ci_low": "0.0279",
+        "mlflow_run_id": "a0de5b3985a64e339765f959c47931aa",
+        "precision_top10": "0.7067",
+        "recall_top10": "0.3212",
+        "xgboost_version": "3.4.1"
+      }
+    },
+    {
+      "ModelPackageArn": "arn:aws:sagemaker:us-east-1:345594594463:model-package/northstar-churn-models/1",
+      "ModelPackageVersion": 1,
+      "ModelApprovalStatus": "PendingManualApproval",
+      "CreationTime": "2026-10-16 01:55:55.210000-06:00",
+      "ModelPackageDescription": "NorthStar churn XGBoost. AUC=0.7813, precision@top10=0.7367, recall@top10=0.3348, lift 95% CI [0.0397, 0.0771]. Trained 2026-10-16.",
+      "CustomerMetadataProperties": {
+        "auc_roc": "0.7813",
+        "baseline_auc": "0.7232",
+        "lift_ci_high": "0.0771",
+        "lift_ci_low": "0.0397",
+        "mlflow_run_id": "3e37d67f438f4ab69c76896f2d7513a7",
+        "precision_top10": "0.7367",
+        "recall_top10": "0.3348",
+        "xgboost_version": "3.4.1"
+      }
+    }
+  ]
+}

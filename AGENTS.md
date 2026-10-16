@@ -106,10 +106,12 @@ Pinned and load-bearing: **`sagemaker>=2.200,<3.0.0`** (SDK 3.x *removed* the
 `lambda` is a reserved word. Lambda zips `handler.py` to the archive root, which is
 correct. For local tests use `importlib.util.spec_from_file_location`.
 
-`scripts/verify-lab2.sh` embeds bare `python3` for its data-quality block, so run it
-with the venv on `PATH` — `PATH="$(pwd)/.venv/bin:$PATH" bash scripts/verify-lab2.sh`
-— or it prints a spurious `FAIL  pandas/pyarrow available` and exits 1. The failure
-looks like a data problem and is not one.
+Several repo scripts — `verify-lab2.sh` and `collect-lab3-evidence.sh` among them —
+invoke bare `python3` (a system Python with no pandas/pyarrow/mlflow). Run them with
+the venv on `PATH`, e.g.
+`PATH="$(pwd)/.venv/bin:$PATH" bash scripts/collect-lab3-evidence.sh --track C`, or
+they fail in a way that looks like a data or dependency problem rather than the
+PATH problem it is.
 
 ### Terraform roots — never mix them
 

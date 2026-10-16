@@ -15,18 +15,29 @@ package **v3** in `northstar-churn-models`.
 
 ## 1. Headline metrics
 
+Every figure below is from the graded `xgb-final` run, measured on the held-out
+**test set** (the lab spec's term for the 30% held out; this report also calls it
+the validation split), **on XGBoost 3.4.1**. The version is part of the
+provenance, not a footnote: the reference figures were measured on 3.2.0 and the
+SageMaker container is 1.7, and metrics move with the version.
+
 | Metric | Value | Gate | Result |
 | --- | --- | --- | --- |
-| **AUC-ROC** | **0.7773** | none (no absolute AUC gate by design) | reported |
+| **AUC-ROC** (test set) | **0.7773** | none (no absolute AUC gate by design) | reported |
 | **Precision @ top 10%** | **0.7233** | ≥ 0.50 | ✅ PASS |
 | **Recall @ top 10%** | **0.3288** | ≥ 0.25 | ✅ PASS |
 | Baseline AUC (recency only) | 0.7232 | — | — |
 | **AUC lift vs baseline** | **+0.0541** | — | — |
 | **Lift 95% CI** (paired bootstrap, 2,000 resamples) | **[0.0347, 0.0738]** | must exclude 0 | ✅ PASS |
 
-Validation set: **n = 3,000**, positives = **660** (22.0%), 6,999 training rows.
-`scale_pos_weight` was computed from the training split as negatives/positives =
-**3.5448** (the value Lab 3 predicts for this dataset, ~3.545) — not hardcoded.
+Test split: **n = 3,000**, positives = **660** (22.0%), 6,999 training rows.
+`scale_pos_weight` was computed from the **training** split as
+negatives/positives = **3.5448** (the value Lab 3 predicts for this dataset,
+~3.545) — not hardcoded. Why that value: with a 22% positive rate a model that
+says "no churn" for everyone is 78% accurate and completely useless, so positives
+are up-weighted by exactly the imbalance ratio to make both classes contribute
+equally to the loss. It is derived from the training rows and never the test rows —
+a weight fitted on the evaluation split would itself be leakage.
 
 **What the gates mean.** Precision @ top 10% answers "of the 10% of customers we
 put on the retention list, how many really churned?" — 72 of every 100. Recall @
@@ -41,6 +52,17 @@ rule the business already has. The full model scores 0.7773. Because the interva
 recency, on this split, with the pairing preserved (both models are scored on the
 same resampled rows — resampling them independently would have inflated the
 interval and made a real improvement look inconclusive).
+
+**How this compares to the lab's reference.** The spec's reference model (XGBoost
+3.2.0, same data, same seed, same split) measured AUC 0.7696 / baseline 0.7233 /
+lift +0.0464 with CI [0.0254, 0.0670]; the same pipeline on XGBoost 1.7 gives
+0.7683 / 0.7208 / +0.0475 / [0.0268, 0.0678]. This run is on **3.4.1**, so it sits
+in the same band but is not expected to match: AUC 0.7773, baseline 0.7232, lift
++0.0541. The baseline is the better sanity anchor — 0.7232 is within 0.0001 of the
+reference 0.7233, which is what you would expect for a one-feature model whose fit
+barely depends on the library version. The lift CI excludes zero at all three
+versions, so the gate result is version-independent even though the point estimates
+are not.
 
 ---
 
@@ -64,6 +86,19 @@ top-10% list in §1 (300 customers, precision 0.7233, recall 0.3288). The 0.50
 matrix is shown because the rubric asks for the threshold behaviour and the
 trade-off chosen: 0.50 buys recall at the cost of more than three times the contact
 budget. The cheaper, sharper list is the one that matches the budget.
+
+At the **operative** threshold — the 90th percentile of predicted probability, i.e.
+the 10% contact budget — the same model gives:
+
+| | Predicted active | Predicted churn |
+| --- | --- | --- |
+| **Actually active** | TN = 2,257 | FP = 83 |
+| **Actually churned** | FN = 443 | TP = 217 |
+
+300 customers contacted, 217 of them real churners (precision 0.7233), reaching 217
+of the 660 churners (recall 0.3288). Putting the two tables side by side is the
+trade-off in one line: cutting the contact budget from 33.8% to 10% roughly doubles
+precision (41% → 72%) and costs about half the recall (63% → 33%).
 
 ---
 
@@ -131,6 +166,17 @@ Platinum at 7.7%. A single model trained on a 22% base rate ranks the customers 
 *look like the typical churner*, and high-spend tiers mostly do not. So the list is
 Bronze-heavy by construction. This is a real, quantified fairness gap in the
 *policy*, not a defect in the ranking metric.
+
+**Which tier is weakest, and how far that can be pushed.** Nominal recall is lowest
+for **Platinum (0.1429)** — but that is **3 positives out of 21**, so Platinum is
+the too-small tier, and the difference between it and Gold (0.1538, 8 of 52) is
+inside the noise. Of the tiers large enough to support a claim, **Gold is the
+weakest (0.1538)**, and it is the more actionable finding: 52 positives is enough
+to say the shared list genuinely under-serves a tier that churns at 10.9% and
+spends highly. Silver (0.2035, 46 of 226) is the *best-evidenced* gap and is also
+materially below the aggregate. So the defensible statement is: one budget
+under-serves Silver, Gold and Platinum relative to Bronze; Platinum's exact deficit
+is unmeasurable, Gold's and Silver's are not.
 
 **Where the numbers cannot support a claim.** Platinum is flagged **TOO SMALL**:
 its recall of 0.1429 is **3 positives out of 21**, and its eye-catching AUC of

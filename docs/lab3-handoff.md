@@ -19,6 +19,14 @@ list serves Bronze (44% of its churners) far better than Gold (15%) or Platinum
 (14%), because Bronze churns at 33% vs 8-11% for the top tiers. Platinum's 21
 validation positives make its tier numbers unmeasurable, not excellent.
 
+**Track A completeness was audited** against `instructions/lab3_instructions_oct_13.md`
+Task 1 and the shipped `scripts/collect-lab3-evidence.sh`: **20 OK, 0 WARN, 7 FAIL**,
+and all seven FAILs are outside Track A (the Phase 7 demo notebook plus the five
+Track C evidence files). The Track A halves of Task 3 — §1 why gradient boosting, §2
+what the features bought — are written in `docs/lab3-model-design.md`; §3/§4 need
+Track C. AWS-only Track A evidence is exported under `docs/lab3-evidence/`
+(`account.json`, `athena-query.json`, `mlflow-runs.csv`, `model-registry.json`).
+
 **MLflow App** (free, serverless, kept forever — Labs 4 and 6 log to it):
 
 ```

@@ -505,6 +505,11 @@ def train_recency_baseline(X_train: np.ndarray,
     dtr = xgb.DMatrix(X_train[:, [i]], label=y_train, feature_names=[BASELINE_FEATURE])
     dva = xgb.DMatrix(X_val[:, [i]], feature_names=[BASELINE_FEATURE])
     spw = float((y_train == 0).sum() / max((y_train == 1).sum(), 1))
+    # The baseline's own hyperparameters are deliberately FIXED rather than exposed
+    # as arguments: it is a reference point, not a model under study, and it must
+    # score identically on every run for the paired lift CI to mean the same thing
+    # run to run. The churn model's parameters are all arguments (parse_args /
+    # train_model); Task 4's "no literals in the training call" is about that call.
     params = {
         "objective": "binary:logistic", "eval_metric": "auc",
         "max_depth": 4, "eta": 0.1, "subsample": 0.9,

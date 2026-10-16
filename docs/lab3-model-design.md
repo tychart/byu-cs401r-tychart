@@ -29,36 +29,60 @@ the trace/cost evidence are all independent of which model is selected.
 
 ## 1. Churn model: why gradient boosting?
 
-<!-- TODO (Phase 7). No results needed -- this section can be written now.
-     Points to make, all specific to THIS dataset rather than generic ML advice:
-     - ~10,000 customers x 13 tabular features + 1 label, ~22% positive rate.
-     - Interpretability requirement: the retention team has to justify who gets
-       contacted and why, so per-feature importances are a deliverable, not a nicety.
-     - Why NOT logistic regression: the signal is not additive/monotonic. The lab's
-       own framing is that ~1/3 of churners still buy right up to T, so recency alone
-       misleads -- that is an interaction (healthy recency x falling category
-       diversity x shifting channel mix), which a linear model cannot express without
-       hand-built interaction terms.
-     - Why NOT a neural network: at 10k rows x 13 features there is not enough data
-       to beat a boosted ensemble, training and tuning cost more, and the result is
-       harder to explain. The lab's recall ceiling (~45% at top-10%) shows the
-       performance headroom is in the features and the contact budget, not in model
-       capacity.
-     - What would change my mind: order(s) of magnitude more rows, high-cardinality
-       or unstructured features (sequences, text), or a genuinely non-tabular task.
-     -->
+9,999 customers, **13 features in the feature group** of which **11 enter the
+model** (`churn_risk_score` is excluded as the recency heuristic that doubles as the
+baseline; `loyalty_tier` is excluded because it correlates with spend and is needed
+for slicing), binary label at a **22.0%** positive rate.
+
+Gradient boosting fits. The features are tabular, of mixed scale, and the boundary
+is not additive — the same recency means different things for a customer whose
+category diversity is collapsing than for one merely between orders. Boosting learns
+such interactions by construction, needs no scaling, tolerates spend-column
+outliers, and exposes **per-feature gain importances**. The retention team must
+justify who gets contacted, so interpretability is a deliverable here.
+
+**Not logistic regression.** A linear logit needs additivity, so the interaction
+above would have to be hand-built — each term a hypothesis to defend. I did **not**
+run a logistic baseline, so I make no measured claim against one; the measured
+competitor is recency-only and it loses (§2). The objection is structural.
+
+**Not a neural network.** 10k rows × 11 inputs is too little data to identify an
+MLP, which also needs scaling, regularisation and more tuning to explain less.
+Capacity is not the constraint: recall at a 10% contact budget is capped near 45% by
+arithmetic, and the gap to close is the +0.054 lift — a features-and-budget problem.
+
+**What would change my mind.** Orders of magnitude more rows; high-cardinality
+identity or unstructured inputs; or a linear model with explicit interactions that
+matched the boost inside the lift CI, which I would prefer for explainability.
 
 ## 2. What the features bought you
 
-<!-- TODO (Phase 7). Needs the graded run. Fill from
-     docs/lab3-evidence/evaluation_metrics.json and slice-evaluation.csv:
-     - full-model AUC vs recency-only baseline AUC, the lift, and the 95% CI
-     - precision@10% / recall@10%
-     - feature-importance ranking: which features carried real signal and which
-       were decorative -- say so plainly if the lift was small
-     - per-tier slices with n and positives, and which tiers are too small to
-       conclude from
-     -->
+Full model **AUC 0.7773** against the recency-only baseline's **0.7232** on the same
+3,000 held-out customers: lift **+0.0541**, paired-bootstrap 95% CI
+**[0.0347, 0.0738]**, excluding zero. Precision @ top 10% **0.7233** (gate 0.50),
+recall **0.3288** (gate 0.25). The feature engineering did measurable work beyond
+the free rule.
+
+**Modest, and the importances explain why.** `purchase_frequency_180d` (21.3% of
+gain), `days_since_last_purchase` (20.4%) and `purchase_frequency_30d` (12.9%) carry
+over half the model between them, so it leans on roughly the same information as the
+baseline. Recency genuinely is the dominant signal; no feature engineering was going
+to produce a dramatic lift.
+
+**What carried signal, what was decorative.** The three features Lab 2's
+diversity/channel argument rests on rank bottom: `avg_basket_size_6m` 5.3%,
+`category_diversity_score` 5.0%, `online_to_store_ratio` 4.8%, with
+`customer_tenure_days` lowest at 3.9%. **I am not calling them decorative.** Gain is
+attribution within one fit, and correlated features split credit arbitrarily, so the
+honest reading is that the feature *set* beat recency while the per-feature story is
+suggestive, not established. An ablation — drop those three, re-fit, re-measure the
+paired CI — would settle it; I did not run it, and it is the top follow-up in
+`docs/lab3-evaluation-report.md` §7.
+
+**Per tier** the picture is uncomfortable: one shared top-10% list reaches 44% of
+Bronze churners but 15% of Gold and 14% of Platinum, because Bronze churns at 33%
+against 8-11% for the top tiers. Platinum's 21 test positives make its own numbers
+unmeasurable either way. Table and discussion in `slice-evaluation.csv` and report §4.
 
 ## 3. LLM system: why an agent rather than a simpler pipeline?
 
