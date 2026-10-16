@@ -21,7 +21,7 @@ purpose; skip it if you already know it.
 | Lab 3 starter kit | ✅ integrated (see §5 for the file map) |
 | Python env | ✅ `.venv` (uv, Python 3.12) with xgboost 3.4.1, sagemaker 2.257.7, mlflow 3.17.1, boto3 1.43.114 |
 | Pause/resume tooling | ✅ `scripts/pause-lab3.sh`, `pause-lab3-deep.sh`, `resume-lab3.sh` |
-| AWS credentials | ❌ expired — run `aws login` before any AWS step |
+| AWS credentials | ❌ expired — `aws login --profile default` (see Phase 0; **not** bare `aws login`) |
 
 **The one unavoidable cost:** the Lab 1–2 data has to be rebuilt once (§4
 Phase 1). After that it is never recomputed again — the pause tooling below
@@ -245,7 +245,16 @@ every copied Python file. Nothing is committed yet.
 
 ### Phase 0 — Prep (15 min)
 
-- [ ] `aws login` (session is expired), then `aws sts get-caller-identity`
+- [ ] **Re-authenticate the `default` profile, not `tf`:**
+      `aws login --profile default`
+      Your `~/.aws/config` gives `[default]` the `login_session` and `[profile tf]` a
+      `credential_process` that delegates to it, and `AWS_PROFILE=tf` is exported.
+      A bare `aws login` therefore tries to attach a login session to `tf` and
+      fails with *"Profile 'tf' is already configured with Credential Process
+      credentials"*. Only `[default]` ever needs refreshing; `tf` inherits it.
+      If the env var still interferes: `AWS_PROFILE=default aws login`.
+- [ ] Verify with the profile Terraform and boto3 actually use:
+      `aws sts get-caller-identity` (with `AWS_PROFILE=tf` set, expect `mgt-admin`)
 - [ ] `uv sync` (already resolved; re-run if `uv.lock` changes)
 - [ ] `export SAGEMAKER_SUPPRESS_V2_WARNING=1` — silences the noisy SDK v2 deprecation warning
 - [ ] Confirm `docs/bedrock-access-verification.txt` exists ✅
