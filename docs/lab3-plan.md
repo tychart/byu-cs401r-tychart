@@ -183,7 +183,7 @@ Two things worth internalising before you write any policy:
 | MLflow **App** | **$0** (serverless) | — |
 | MLflow **Tracking Server** | **$0.60/hr** — never create one | — |
 | Model Registry | $0 | — |
-| Secrets Manager secret (LiteLLM key) | **~$0.40/month** | $0.05 per 10,000 API calls, ~2 calls per session. Created out of band, so `terraform destroy` does **not** delete it — Phase 8 does |
+| AgentCore Identity token vault (LiteLLM key) | **$0** | Not charged when used through AgentCore Runtime, and no per-secret storage fee. The key is stored in a **service-managed** secret (`OwningService: bedrock-agentcore-identity`), not one you own or pay for |
 | AgentCore harness session | $0 | ~$0.003/session at 60s idle |
 | Model tokens (`deepseek-flash` via LiteLLM) | $0 | $0.14 / $0.28 per 1M → **~$0.002 per eval run** |
 
@@ -464,31 +464,37 @@ Lambda, `agent-traces.jsonl` and `agent-cost.csv` are all independent of the
 model — which is exactly why the lab barely changes.
 
 ```bash
-# 1. Create a DEDICATED proxy key for the lab (revocable on its own), then
-#    store it in Secrets Manager once. `read -rs` keeps it out of shell history.
-read -rs KEY
-aws secretsmanager create-secret \
-  --name northstar-agent-litellm-api-key \
-  --description "LiteLLM proxy key for the NorthStar CS401R agent harness" \
-  --secret-string "$KEY" --region us-east-1
-unset KEY
-
-# 2. Deploy. Terraform looks the secret up by name; it never sees the value.
 cd infrastructure/environments/agent
-cp backend.tf.example backend.tf           # replace <ACCOUNT_ID> with 345594594463
+cp backend.tf.example backend.tf               # replace <ACCOUNT_ID> with 345594594463
+cp terraform.tfvars.example terraform.tfvars   # paste a DEDICATED LiteLLM key
 terraform init && terraform apply
 ```
 
-The secret is **not** managed by Terraform, deliberately:
+The key goes into the **AgentCore Identity token vault**, created here as an
+`aws_bedrockagentcore_api_key_credential_provider`. Verified end to end on
+2026-10-15 with a throwaway key that was created, planned against, applied, and
+deleted:
 
 | | |
 | --- | --- |
-| Survives `terraform destroy` | Re-applying the agent stack never means re-supplying the key, which matters while you iterate on the three TODOs |
-| Key never enters state | Terraform only ever handles the ARN — a pointer. The value is not in this repo, your git history, or `terraform.tfstate` |
-| Costs ~$0.40/month | Secrets Manager bills per secret-month, **and `terraform destroy` will not clean it up**. Deleting it by hand is a Phase 8 step |
-| Must exist before `plan` | The lookup is a data source, so `terraform plan` fails until step 1 is done. That is the one ordering constraint |
+| ARN shape | `arn:aws:bedrock-agentcore:us-east-1:345594594463:token-vault/default/apikeycredentialprovider/northstar-litellm` — exactly the pattern `apiKeyArn` requires. **A Secrets Manager ARN is rejected** |
+| Cost | **$0.** AgentCore Identity is not charged when used through AgentCore Runtime, and the token vault has no per-secret storage fee. My first attempt used Secrets Manager, which would have been $0.40/month |
+| Key in state? | **No.** `api_key_wo` is write-only — `terraform state show` prints `(write-only attribute)` and grepping `terraform.tfstate` for the key returns **0** hits |
+| Cleanup | Deleting the credential provider also removes the service-managed secret behind it (`bedrock-agentcore-identity!default/apikey/...`). Verified: after destroy, `list-secrets` is empty |
+| Rotation | Automatic — the version counter is derived from the key (a hash), so a changed key is resent without bumping anything by hand |
 
-To rotate the key: `aws secretsmanager put-secret-value --secret-id northstar-agent-litellm-api-key --secret-string "$NEW_KEY"` — no Terraform change needed.
+**The one rough edge.** The provider requires exactly one of `api_key`,
+`api_key_secret_config` or `api_key_wo` on **every** operation, and a write-only
+argument cannot be read back from state. So `terraform destroy` needs the key
+present too — which is why it lives in the gitignored `terraform.tfvars` rather
+than a shell variable, so every command (including the destroy inside
+`teardown-lab3.sh`) finds it with no setup. If you ever lose the key, delete the
+provider by hand and drop the state entry:
+
+```bash
+aws bedrock-agentcore-control delete-api-key-credential-provider --name northstar-litellm
+terraform state rm aws_bedrockagentcore_api_key_credential_provider.litellm
+```
 
 If the proxy is ever unreachable, `-var model_backend=bedrock` switches to
 `openai.gpt-oss-20b-1:0` with no other change.
@@ -626,17 +632,10 @@ Order matters: the AgentCore export only exists while the stack is up.
 - [ ] Confirm `aws sagemaker list-endpoints` is empty and no AgentCore
       harness/gateway/policy-engine/runtime remains (the script checks).
 - [ ] **Keep the MLflow App** — free, and Labs 4 and 6 log to it.
-- [ ] **Delete the LiteLLM secret by hand** — this is the one piece of the LiteLLM
-      backend `teardown-lab3.sh` does not know about, because Terraform never
-      owned it. ~$0.40/month until you do:
-      ```bash
-      aws secretsmanager delete-secret \
-        --secret-id northstar-agent-litellm-api-key \
-        --force-delete-without-recovery --region us-east-1
-      aws secretsmanager list-secrets --region us-east-1   # expect empty
-      ```
-      Only do this once you are done *using* the proxy for this course — the
-      key is gone the moment the secret is.
+- [ ] **Nothing to clean up for the LiteLLM key.** It is a Terraform resource, so
+      `teardown-lab3.sh` destroys it, and deleting the credential provider also
+      removes the service-managed secret behind it. Confirm with:
+      `aws secretsmanager list-secrets --region us-east-1` (expect empty).
 - [ ] Commit everything under `docs/` and `notebooks/`.
 - [ ] `git tag lab3-submit && git push origin lab3-submit` ← **do not forget this**;
       an untagged repo is graded at your last commit before the deadline.
@@ -769,10 +768,10 @@ evidence script checks this chain; so does the grader.
 | Track C policy-engine IAM action list is undocumented in the kit | Expected: iterate on the apply error using the AgentCore "Gateway and Policy IAM Permissions" doc page. Budget an hour. |
 | AgentCore availability/quota on a new account | Track A is 35 points and can proceed regardless; sequence A first. |
 | Harness rejects `litellm_model_config` server-side (the one thing a plan cannot prove; the Terraform schema allows it) | Phase 5's one-scenario spike catches it in seconds. Fallback: `-var model_backend=bedrock` → `openai.gpt-oss-20b-1:0`, nothing else changes. |
-| LiteLLM secret value shape (`api_key_arn` may expect the raw key or JSON like `{"api_key": "..."}`) | Store the raw key first — the common case. If the harness gets a 401 from the proxy, replace the value with JSON: `put-secret-value --secret-id northstar-agent-litellm-api-key --secret-string '{"api_key":"sk-..."}'`. No Terraform change needed. |
-| Forgetting the out-of-band secret at the end of the lab | It bills ~$0.40/month and `terraform destroy` will not remove it. It is an explicit Phase 8 checklist item, and the one thing `scripts/teardown-lab3.sh` cannot verify for you. |
+| The provider demands the key on every terraform operation, including `destroy` | The key lives in the gitignored `terraform.tfvars`, so it is always present. Escape hatch if the key is ever lost: `aws bedrock-agentcore-control delete-api-key-credential-provider --name northstar-litellm` then `terraform state rm aws_bedrockagentcore_api_key_credential_provider.litellm`. |
+| Secret value exposure | None. `api_key_wo` is write-only: the key is sent to AWS and never persisted, so `terraform state show` prints `(write-only attribute)`. |
 | Proxy unavailable or key revoked during grading | The TA never runs it — the notebook is committed **with outputs**, so the evidence is static. The proxy matters only while you are producing it. |
-| Secret value exposure | None: the secret is created out of band and Terraform only handles its ARN. The value is not in state, the repo, or git history. |
+| Secret value exposure | None: the key is written to AgentCore's token vault through a Terraform write-only argument, so it is never persisted to state, the repo, or git history. |
 | `.terraform.lock.hcl` is git-ignored repo-wide (`**/*.lock.hcl`) | The agent root pins `6.67.0` exactly in `versions.tf`, so the lock file is redundant. Leave as-is, or narrow the ignore rule later. |
 
 ---
@@ -789,4 +788,5 @@ evidence script checks this chain; so does the grader.
 | Track C model backend | **LiteLLM proxy** — `deepseek-flash` at `https://litellm.tychart.com/v1`, key in Secrets Manager. **No Anthropic.** |
 | Track C model fallback | `-var model_backend=bedrock` → `openai.gpt-oss-20b-1:0` (Apache-2.0, $0.07/$0.30). One flag, no other change. |
 | If the adversarial scenario fails | Escalate to bigger **open-weight** models (gpt-oss-120b, Qwen3 32B). Never Anthropic. Report the model and the failure honestly — that is graded content (failure modes + mitigations). |
-| Model wiring | `model_backend` switches `litellm_model_config` ↔ `bedrock_model_config`; the Secrets Manager secret and its IAM policy exist only in the LiteLLM path, so the Bedrock path stays dependency-free |
+| Model wiring | `model_backend` switches `litellm_model_config` ↔ `bedrock_model_config`; the API key credential provider and its IAM policy exist only in the LiteLLM path, so the Bedrock path stays dependency-free |
+| Where the LiteLLM key lives | **AgentCore Identity token vault** (`aws_bedrockagentcore_api_key_credential_provider`), supplied via a Terraform **write-only** argument. **$0**, not in state, auto-removed on destroy. Rejected alternatives: Secrets Manager ($0.40/month), a local encrypted file (the harness runs in AWS and cannot read it) |

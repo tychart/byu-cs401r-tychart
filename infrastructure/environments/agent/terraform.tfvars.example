@@ -1,0 +1,32 @@
+# Copy to terraform.tfvars, then paste your key.  `terraform.tfvars` is matched by
+# `*.tfvars` in the repository .gitignore, so it is never committed.
+#
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# WHY A TFVARS FILE RATHER THAN AN ENV VAR
+# The AWS provider requires exactly one of `api_key`, `api_key_secret_config` or
+# `api_key_wo` to be set on every operation, and `api_key_wo` is WRITE-ONLY, so
+# Terraform cannot read the key back out of state to reuse it. That means
+# `terraform plan`, `apply` AND `destroy` all need the value present. Putting it
+# here means every command in this directory -- including the `terraform destroy`
+# inside scripts/teardown-lab3.sh -- finds it automatically, with no shell setup.
+#
+# WHERE THE KEY ACTUALLY GOES
+# Into AgentCore Identity's token vault, as an API key credential provider. It is
+# NOT stored in Terraform state (write-only), and it is NOT a Secrets Manager
+# secret of yours, so it costs nothing: AgentCore Identity is not charged when it
+# is used through AgentCore Runtime. Deleting the credential provider removes the
+# service-managed secret behind it automatically.
+#
+# Create a DEDICATED key on the proxy for this lab rather than reusing your
+# personal one, so it can be revoked on its own.
+
+# Only needed when model_backend = "litellm" (the default).
+litellm_api_key = "sk-paste-a-dedicated-litellm-lab-key-here"
+
+# Rotation is automatic: the write-only version counter is derived from the key
+# itself, so pasting a new value here and re-applying is all it takes.
+
+# Uncomment to use Bedrock instead and skip the key entirely:
+# model_backend = "bedrock"
+# bedrock_model_id = "openai.gpt-oss-20b-1:0"

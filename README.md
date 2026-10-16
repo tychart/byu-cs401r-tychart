@@ -136,17 +136,9 @@ Artifacts land in:
 ### Track C: customer service agent
 
 ```bash
-# 1. Once: store a DEDICATED LiteLLM proxy key in Secrets Manager.
-#    `read -rs` keeps it out of your shell history.
-read -rs KEY
-aws secretsmanager create-secret \
-  --name northstar-agent-litellm-api-key \
-  --secret-string "$KEY" --region us-east-1
-unset KEY
-
-# 2. Deploy. Terraform looks the secret up by name and only ever sees its ARN.
 cd infrastructure/environments/agent   # separate root, aws 6.x provider
-cp backend.tf.example backend.tf       # fill in the account ID
+cp backend.tf.example backend.tf               # fill in the account ID
+cp terraform.tfvars.example terraform.tfvars   # paste a DEDICATED LiteLLM key
 terraform init && terraform apply
 
 cd ../../..
@@ -166,13 +158,20 @@ Switching is one flag (`-var model_backend=bedrock`) and touches nothing else:
 the gateway, the Cedar `$50` cap, the tools and the trace/cost evidence are all
 independent of the model.
 
-The proxy key lives in Secrets Manager, deliberately **not** in Terraform. This
-stack looks the secret up by name and uses only its ARN, so the key value never
-enters the repo, git history, or `terraform.tfstate`, and `terraform destroy` does
-not delete it. Two consequences to remember: the secret must exist *before*
-`terraform plan`, and because Terraform does not own it, it bills ~$0.40/month
-until you delete it by hand (the teardown step in `docs/lab3-plan.md` Phase 8).
-See Phase 5 for the full verified detail.
+The proxy key goes into **AgentCore Identity's token vault** as an API key
+credential provider — not Secrets Manager, and not a file. That matters twice:
+`apiKeyArn` must match the token-vault ARN pattern
+(`...:token-vault/default/apikeycredentialprovider/<name>`) or it is rejected, and
+AgentCore Identity is **free** when used through AgentCore Runtime, so there is no
+per-secret charge. The key is supplied through `terraform.tfvars` (gitignored)
+into a Terraform **write-only** argument, so it is sent to AWS and never written to
+`terraform.tfstate`. Deleting the credential provider removes the service-managed
+secret behind it automatically.
+
+One consequence worth knowing: the provider requires the key present on *every*
+operation, including `terraform destroy`, because a write-only argument cannot be
+read back out of state. Keeping it in `terraform.tfvars` makes that automatic.
+See `docs/lab3-plan.md` Phase 5 for the verified details.
 
 The five tools live in `agent/tools.py` and are exposed through the AgentCore
 Gateway with Cedar policy enforced in `ENFORCE` mode. `agent/harness_client.py`

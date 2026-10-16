@@ -110,28 +110,41 @@ variable "litellm_api_base" {
   default     = "https://litellm.tychart.com/v1"
 }
 
-variable "litellm_secret_name" {
+variable "litellm_credential_provider_name" {
   description = <<-EOT
-    Name of the PRE-EXISTING Secrets Manager secret that holds the LiteLLM proxy
-    API key. Terraform looks the secret up by name and uses only its ARN, so the
-    key value never enters this configuration or Terraform state.
+    Name of the AgentCore Identity API key credential provider that holds the
+    LiteLLM proxy key. Becomes the last segment of the ARN the harness uses:
+      arn:aws:bedrock-agentcore:<region>:<acct>:token-vault/default/apikeycredentialprovider/<this>
+    Allowed characters: letters, digits, dot, dash.
 
-    Create it once, outside Terraform:
-
-      read -rs KEY
-      aws secretsmanager create-secret \
-        --name northstar-agent-litellm-api-key \
-        --secret-string "$KEY"
-      unset KEY
-
-    "read -rs" keeps the key out of your shell history. To rotate it later:
-      aws secretsmanager put-secret-value \
-        --secret-id northstar-agent-litellm-api-key --secret-string "$NEW_KEY"
-
-    Note this secret is deliberately NOT managed here, so `terraform destroy`
-    does not delete it and it keeps billing ~$0.40/month. Delete it by hand when
-    the lab is finished (lab3-plan Phase 8).
+    The key lives in AgentCore's token vault, not in Secrets Manager and not in
+    a local file. AgentCore Identity is not charged when it is used through
+    AgentCore Runtime, so this costs nothing, and the default token vault
+    already exists in the account.
   EOT
   type        = string
-  default     = "northstar-agent-litellm-api-key"
+  default     = "northstar-litellm"
+}
+
+variable "litellm_api_key" {
+  description = <<-EOT
+    LiteLLM proxy API key. Create a DEDICATED key for this lab rather than
+    reusing your personal one, so it can be revoked on its own.
+
+    Supply it out-of-band so it never reaches the repository:
+
+      read -rs KEY
+      export TF_VAR_litellm_api_key="$KEY"
+      unset KEY
+
+    This is consumed by a Terraform WRITE-ONLY argument (api_key_wo), so the value
+    is sent to AWS and is never persisted to terraform.tfstate. "read -rs" keeps
+    it out of your shell history as well.
+
+    Rotation is automatic: the write-only version counter is derived from the key
+    itself, so a new key is detected and resent without you bumping anything.
+  EOT
+  type        = string
+  sensitive   = true
+  default     = null
 }

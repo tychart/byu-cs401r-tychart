@@ -47,6 +47,15 @@ locals {
     var.bedrock_model_profile_prefix == "" ? "" : "arn:aws:bedrock:${var.region}:${local.account_id}:inference-profile/${local.bedrock_invoke_model_id}",
     "arn:aws:bedrock:*::foundation-model/${var.bedrock_model_id}",
   ])
+
+  # The provider requires api_key_wo and api_key_wo_version to be supplied
+  # TOGETHER and rejects either one alone ("Invalid Attribute Combination").
+  # Deriving the version from the key keeps them in lockstep:
+  #   * no key  -> both null, so `terraform destroy` works with no key present
+  #   * key set -> the version changes automatically whenever the key does, so
+  #                rotating the key needs no manual counter to bump
+  litellm_api_key_set     = var.litellm_api_key != null && var.litellm_api_key != ""
+  litellm_api_key_version = local.litellm_api_key_set ? parseint(substr(sha256(var.litellm_api_key), 0, 8), 16) : null
 }
 
 # ---------------------------------------------------------------------------
@@ -259,47 +268,87 @@ resource "aws_bedrockagentcore_policy" "permit_tools" {
 # $75 credits, which the gateway allows.
 
 # ---------------------------------------------------------------------------
-# LiteLLM backend: the proxy API key, and the harness's permission to read it.
-# Neither exists when model_backend = "bedrock".
+# LiteLLM backend: the proxy API key.
 #
-# The secret is created OUT OF BAND, not here, on purpose:
-#   * it survives `terraform destroy`, so re-applying the agent stack never
-#     means re-supplying the key;
-#   * the key value never enters Terraform state, which is where secrets
-#     managed by Terraform normally leak;
-#   * Terraform only ever handles the ARN, which is a pointer, not a secret.
+# The key goes into AgentCore Identity's token vault as an API key credential
+# provider. This is NOT Secrets Manager and NOT a local file, and the distinction
+# is not cosmetic -- `api_key_arn` in the harness model config must match the
+# token-vault ARN pattern exactly:
 #
-# Bootstrap once (README and lab3-plan Phase 5 have the full command):
-#   read -rs KEY
-#   aws secretsmanager create-secret --name northstar-agent-litellm-api-key \
-#     --secret-string "$KEY"
-#   unset KEY
+#   arn:aws:bedrock-agentcore:<region>:<acct>:token-vault/default/apikeycredentialprovider/<name>
 #
-# Because it is not in state, `terraform destroy` will NOT delete it. It bills
-# about $0.40/month until you delete it by hand -- that is a Phase 8 teardown
-# step, not something Terraform will remind you about.
+# A Secrets Manager ARN does not match that pattern and would be rejected.
+#
+# Why this and not something else:
+#   * $0. AgentCore Identity is not charged when used through AgentCore Runtime,
+#     which is where the harness runs, and the token vault has no per-secret
+#     storage fee. A Secrets Manager secret would be $0.40/month.
+#   * api_key_wo is a WRITE-ONLY argument: Terraform sends the value to AWS and
+#     never persists it to terraform.tfstate. That is the actual fix for "secrets
+#     in Terraform state" -- better than a local encrypted file, which the
+#     harness could not read anyway, since it runs inside AWS.
+#   * It is a normal resource, so `terraform destroy` removes it. No forgotten
+#     resource and no manual teardown step.
+#
+# Rotating the key: change var.litellm_api_key AND bump
+# var.litellm_api_key_version together, or Terraform will not resend the value.
 # ---------------------------------------------------------------------------
 
-data "aws_secretsmanager_secret" "litellm" {
+resource "aws_bedrockagentcore_api_key_credential_provider" "litellm" {
   count = local.use_litellm ? 1 : 0
-  name  = var.litellm_secret_name
+  name  = var.litellm_credential_provider_name
+
+  # Write-only: never written to state. The version is derived from the key so
+  # the pair always moves together (see local.litellm_api_key_version).
+  api_key_wo         = local.litellm_api_key_set ? var.litellm_api_key : null
+  api_key_wo_version = local.litellm_api_key_version
+
+  lifecycle {
+    precondition {
+      condition     = var.litellm_api_key != null && var.litellm_api_key != ""
+      error_message = "litellm_api_key is empty. Set it out-of-band:\n  export TF_VAR_litellm_api_key=sk-...\n(or use -var model_backend=bedrock)."
+    }
+  }
 }
 
 # A separate role policy rather than another statement inside
 # aws_iam_role_policy.harness, so the Bedrock-only path needs no change.
+# The three statements are the ones the AgentCore "harness security" page
+# prescribes for an API key credential provider.
 resource "aws_iam_role_policy" "harness_litellm" {
   count = local.use_litellm ? 1 : 0
-  name  = "harness-litellm-secret"
+  name  = "harness-litellm-token-vault"
   role  = aws_iam_role.harness.id
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Sid      = "ReadLiteLlmApiKey"
-      Effect   = "Allow"
-      Action   = "secretsmanager:GetSecretValue"
-      Resource = data.aws_secretsmanager_secret.litellm[0].arn
-    }]
+    Statement = [
+      {
+        Sid    = "AgentCoreApiKeyTokenVaultDefault"
+        Effect = "Allow"
+        Action = "bedrock-agentcore:GetResourceApiKey"
+        Resource = [
+          "arn:aws:bedrock-agentcore:${var.region}:${local.account_id}:token-vault/default",
+          "arn:aws:bedrock-agentcore:${var.region}:${local.account_id}:workload-identity-directory/default",
+          "arn:aws:bedrock-agentcore:${var.region}:${local.account_id}:workload-identity-directory/default/workload-identity/harness_${var.harness_name}-*",
+        ]
+      },
+      {
+        Sid      = "AgentCoreApiKeyTokenVaultPerKey"
+        Effect   = "Allow"
+        Action   = "bedrock-agentcore:GetResourceApiKey"
+        Resource = aws_bedrockagentcore_api_key_credential_provider.litellm[0].credential_provider_arn
+      },
+      {
+        # AgentCore stores a MANAGED key under a service-owned secret named
+        # bedrock-agentcore-identity!default/apikey/<provider-name>-*. That name
+        # is service-generated, so the trailing wildcard is required.
+        Sid      = "AgentCoreApiKeySecret"
+        Effect   = "Allow"
+        Action   = "secretsmanager:GetSecretValue"
+        Resource = "arn:aws:secretsmanager:${var.region}:${local.account_id}:secret:bedrock-agentcore-identity!default/apikey/${var.litellm_credential_provider_name}-*"
+      },
+    ]
   })
 }
 
@@ -372,7 +421,7 @@ resource "aws_bedrockagentcore_harness" "this" {
       content {
         model_id    = var.litellm_model_id
         api_base    = var.litellm_api_base
-        api_key_arn = data.aws_secretsmanager_secret.litellm[0].arn
+        api_key_arn = aws_bedrockagentcore_api_key_credential_provider.litellm[0].credential_provider_arn
         max_tokens  = 1024
       }
     }
