@@ -1,0 +1,6 @@
+tier,n,positives,auc,recall_top10,recall_gap_vs_aggregate,recall_drop_flag,too_small
+ALL,3000,660,0.7773,0.3288,0.0,False,False
+Bronze,1071,361,0.7577,0.4432,0.1144,False,False
+Gold,483,52,0.7427,0.1538,-0.175,True,False
+Platinum,307,21,0.855,0.1429,-0.1859,True,True
+Silver,1139,226,0.7047,0.2035,-0.1253,True,False

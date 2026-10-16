@@ -1,0 +1,72 @@
+sagemaker.config INFO - Not applying SDK defaults from location: /etc/xdg/sagemaker/config.yaml
+sagemaker.config INFO - Not applying SDK defaults from location: /home/tychart/.config/sagemaker/config.yaml
+============================================================
+NorthStar Churn Prediction — Training Script
+============================================================
+Athena QueryExecutionId: 0fb4a8f2-f5a9-4294-a22f-ad55ba8c53d1
+  sagemaker_featurestore.northstar_dev_customer_features_1792134849 | event_time 2026-01-01..2027-01-01 | results -> s3://northstar-dev-data-345594594463/artifacts/athena-results/
+  Loaded 9,999 rows / 9,999 unique customers
+Preprocessing 9,999 samples...
+  Missing feature values: 0 (kept as NaN for XGBoost)
+  Positive class rate: 22.0%
+  Feature matrix shape: (9999, 11)
+
+Train: 6,999 | Validation: 3,000
+
+Training XGBoost with params: {
+  "objective": "binary:logistic",
+  "eval_metric": [
+    "logloss",
+    "auc"
+  ],
+  "max_depth": 6,
+  "eta": 0.1,
+  "min_child_weight": 5,
+  "subsample": 0.8,
+  "colsample_bytree": 0.8,
+  "scale_pos_weight": 3.544805194805195,
+  "seed": 42,
+  "verbosity": 1
+}
+[0]	train-logloss:0.66743	train-auc:0.78498	validation-logloss:0.66949	validation-auc:0.75545
+[25]	train-logloss:0.48330	train-auc:0.85888	validation-logloss:0.52397	validation-auc:0.77675
+[35]	train-logloss:0.46420	train-auc:0.87315	validation-logloss:0.51497	validation-auc:0.77730
+/home/tychart/projects/byu-cs401r-tychart/churn_training_skeleton.py:600: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "eval_timestamp": datetime.utcnow().isoformat(),
+/home/tychart/projects/byu-cs401r-tychart/churn_training_skeleton.py:977: UserWarning: [01:57:28] WARNING: /__w/xgboost/xgboost/src/c_api/c_api.cc:1553: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  model.save_model(model_path)
+/home/tychart/projects/byu-cs401r-tychart/churn_training_skeleton.py:990: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "training_date": datetime.utcnow().isoformat(),
+/home/tychart/projects/byu-cs401r-tychart/churn_training_skeleton.py:1059: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  f"Trained {datetime.utcnow().date()}."
+
+── Evaluation Results ──────────────────────────────
+  precision_top10          : 0.7233  (threshold: 0.5000)  ✓ PASS
+  recall_top10             : 0.3288  (threshold: 0.2500)  ✓ PASS
+  auc_lift 95% CI          : [0.0347, 0.0738]  (must exclude 0)  ✓ PASS
+  All thresholds passed ✓
+
+── Slice Evaluation ────────────────────────────────
+  tier            n   pos       auc  recall@10      gap  flags
+  Bronze       1071   361    0.7577     0.4432  +0.1144  
+  Gold          483    52    0.7427     0.1538  -0.1750  >10pp below aggregate
+  Platinum      307    21    0.8550     0.1429  -0.1859  TOO SMALL - do not conclude from this tier, >10pp below aggregate
+  Silver       1139   226    0.7047     0.2035  -0.1253  >10pp below aggregate
+  ALL          3000   660    0.7773     0.3288
+  (flag: recall > 10% below aggregate 0.3288; too_small if n < 100 or positives < 25)
+✓ Slice evaluation written to docs/lab3-evidence/slice-evaluation.csv (4 tiers + aggregate)
+✓ Confusion matrix written to docs/lab3-evidence/confusion-matrix.png
+✓ Feature importance written to docs/lab3-evidence/feature-importance.png
+🏃 View run xgb-final at: https://mlflow.sagemaker.us-east-1.app.aws/#/experiments/1/runs/4afe0e63a8c14bb697b6ab80cba7d727
+🧪 View experiment at: https://mlflow.sagemaker.us-east-1.app.aws/#/experiments/1
+
+✓ MLflow run 'xgb-final' logged to 'northstar-churn' (run_id=4afe0e63a8c14bb697b6ab80cba7d727)
+
+✓ Model saved to ./model/model.xgb
+✓ Model artifact uploaded to s3://northstar-dev-data-345594594463/artifacts/models/xgb-final/model.tar.gz
+  model package group northstar-churn-models already exists
+✓ Registered arn:aws:sagemaker:us-east-1:345594594463:model-package/northstar-churn-models/3 as PendingManualApproval
+
+============================================================
+Training complete. AUC-ROC: 0.7773
+============================================================

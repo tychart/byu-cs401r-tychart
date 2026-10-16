@@ -166,6 +166,12 @@ apply *after* the NAT is already gone; the old NAT-only guard then exited 0 on t
 next run and stranded a detached Elastic IP billing ~$0.005/hr with no symptom. The
 script now checks NAT **and** EIP in its guard and retries the apply up to 5 times.
 
+**Track A needs no NAT resume.** Training runs locally, and Athena, the MLflow App
+and Model Registry are all service APIs — verified 2026-10-16, when the graded run
+queried the offline store, logged three MLflow runs and registered a model package
+with the NAT destroyed. Only Glue jobs and Studio apps need private-subnet egress,
+and the data is already built. Track A work therefore costs storage cents.
+
 **Why the keep-set is what it is:** destroying `module.feature_store` deletes the
 offline-store Glue table and breaks the Task 1 Athena query, forcing a re-ingest.
 The S3 Parquet survives, but the catalog entry does not. Recomputing the Glue
@@ -277,6 +283,12 @@ clean-looking report that had verified nothing. Keep that behaviour.
 - The XGBoost container in SageMaker is **1.7**; the reference metrics were measured
   on **3.2.0**; local training uses **3.4.1**. Metrics move with the version — always
   report which one produced the numbers.
+- **XGBoost 3.x writes UBJSON when the file extension is unrecognised.**
+  `save_model("model.xgb")` produces UBJSON, and reloading it prints
+  `Unknown file format: 'xgb'. Using UBJSON (ubj) as a guess`. It does load (UBJSON
+  is supported from XGBoost 1.6), but the extension is misleading and the load is
+  untested against a real container. Lab 5 should save an explicit `model.json` or
+  verify the container load before deploying from `northstar-churn-models`.
 
 ---
 

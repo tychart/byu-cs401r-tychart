@@ -12,3 +12,9 @@ __pycache__/
 .pi/
 
 **/*.lock.hcl
+
+# Default output locations of churn_training_skeleton.py (--model-dir / --output-data-dir).
+# The graded copies of these live under docs/lab3-evidence/; the model artifact is
+# uploaded to s3://<bucket>/artifacts/models/. These are just local scratch copies.
+/model/
+/output/

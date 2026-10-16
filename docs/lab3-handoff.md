@@ -4,9 +4,20 @@ Snapshot as of commit **`ba6ae22`** (main, pushed). Repo: `~/projects/byu-cs401r
 (branch `main`, remote `github.com:tychart/byu-cs401r-tychart.git`).
 
 **Tracks: A (required) + C (chosen). Track B is NOT attempted.**
-**Current position: Phase 2 complete (2026-10-16). Phase 3 — Track A
-implementation — is the next action.** Phases 0-2 are committed (`ba6ae22`,
-`a3bff0c`, `e4d1a12`, `9b5b663`). Nothing is pending in the working tree.
+**Current position: Phases 0-4 complete (2026-10-16) — Track A is implemented,
+run and evaluated. Phase 5 (Track C Terraform) is the next action.**
+
+Phases 0-2 are committed (`ba6ae22`, `a3bff0c`, `e4d1a12`, `9b5b663`, `ac40d45`).
+
+**Track A results** (graded run `xgb-final`, full detail in
+`docs/lab3-evaluation-report.md`): AUC **0.7773**, precision@top10 **0.7233**
+(gate 0.50), recall@top10 **0.3288** (gate 0.25), recency baseline **0.7232**,
+lift **+0.0541** with 95% CI **[0.0347, 0.0738]** (excludes zero). Three MLflow
+runs (`xgb-depth4/6/8`) logged; model package **v3** registered
+`PendingManualApproval`. The single most notable finding: the one shared top-10%
+list serves Bronze (44% of its churners) far better than Gold (15%) or Platinum
+(14%), because Bronze churns at 33% vs 8-11% for the top tiers. Platinum's 21
+validation positives make its tier numbers unmeasurable, not excellent.
 
 **MLflow App** (free, serverless, kept forever — Labs 4 and 6 log to it):
 
@@ -14,9 +25,8 @@ implementation — is the next action.** Phases 0-2 are committed (`ba6ae22`,
 arn:aws:sagemaker:us-east-1:345594594463:mlflow-app/app-W4LYKOSSDJZE
 ```
 
-Export it as `MLFLOW_APP_ARN` for the training script. Verified from this
-machine on 2026-10-16: SigV4 auth works, and the `northstar-churn` experiment
-already exists (id 1). Details in `docs/lab3-evidence/mlflow-app.json`.
+Export it as `MLFLOW_APP_ARN` for the training script. Details in
+`docs/lab3-evidence/mlflow-app.json`.
 
 ---
 
@@ -38,8 +48,9 @@ Also useful: the agent's long-term memory has a "Lab 3 Track C — model + key s
 | 0 — Prep | ✅ **DONE** |
 | 1 — Rebuild the Lab 1-2 stack + recompute the data **once** | ✅ **DONE** (2026-10-16) |
 | 2 — Create the SageMaker MLflow **App** | ✅ **DONE** (2026-10-16) |
-| 3 — Implement Track A (4 TODO areas in `churn_training_skeleton.py`) | ⬜ **NEXT** |
-| 4 — Graded training run + `docs/lab3-evaluation-report.md` | ⬜ |
+| 3 — Implement Track A (4 TODO areas in `churn_training_skeleton.py`) | ✅ **DONE** (2026-10-16) |
+| 4 — Graded training run + `docs/lab3-evaluation-report.md` | ✅ **DONE** (2026-10-16) |
+| 5 — Track C Terraform (3 `TODO (student)` items) + deploy | ⬜ **NEXT** |
 | 5 — Track C Terraform (3 `TODO (student)` items) + deploy | ⬜ |
 | 6 — Track C evaluation, policy tests, failure analysis | ⬜ |
 | 7 — Design doc prose + `notebooks/lab3-demo.ipynb` | ⬜ |
@@ -61,10 +72,11 @@ S3 bucket, Glue catalog/jobs, Feature Store and IAM roles are live. The S3 bucke
 holds `raw/`, `processed/` and `features/` (job output *and* the offline store).
 The `agent/` (AgentCore) stack is **not** applied. Idle cost is storage cents.
 While paused the private subnet has **no internet**: run `bash scripts/resume-lab3.sh`
-before any Glue job or Studio app. **Track A (Phases 3-4) should not need a resume
-at all** — training is local, and Athena, the MLflow App and Model Registry are all
-service APIs. Treat that as a claim to confirm at the first Athena run, not as
-established fact.
+before any Glue job or Studio app. **Track A needed no resume at all — confirmed,
+not assumed:** the graded run read the Feature Store through Athena, logged to the
+MLflow App and registered a model package while the NAT was destroyed, because all
+three are service APIs and training runs locally. Only Glue jobs and Studio apps
+need the NAT, and the data is already built.
 
 ---
 

@@ -332,7 +332,24 @@ every copied Python file. Nothing is committed yet.
 
 ---
 
-### Phase 3 — Implement Track A's four TODO areas
+### Phase 3 — Implement Track A's four TODO areas ✅ 2026-10-16
+
+> **Done.** All four areas implemented in `churn_training_skeleton.py`:
+> the Athena path (prints `Athena QueryExecutionId:`, dedups with `ROW_NUMBER()`,
+> excludes `is_deleted`, `ORDER BY customer_id`), documented imputation,
+> per-tier slice evaluation with `n`/positives and a too-small flag, MLflow
+> logging, and registry registration as `PendingManualApproval` with the
+> `northstar-churn-models` group created idempotently in-script.
+>
+> Two deliberate implementation choices worth knowing:
+> **imputation is none** (NaN passed through to XGBoost; the data has 0 nulls, so
+> it is a safety net), and **slice recall is measured against the one global
+> top-10% list** via a shared `top10_mask()` helper, so per-tier recalls
+> decompose the aggregate exactly instead of ranking each tier against itself.
+> `too_small` uses `n < 100 or positives < 25` (stricter than the plan's "~10",
+> so Platinum is flagged rather than silently reported).
+> Verified offline against synthetic data before any AWS call: gate pass/refuse,
+> the decomposition invariant, CSV columns, and both plots.
 
 All in `churn_training_skeleton.py`.
 
@@ -419,9 +436,18 @@ All in `churn_training_skeleton.py`.
 
 ---
 
-### Phase 4 — The graded run and the evaluation report
+### Phase 4 — The graded run and the evaluation report ✅ 2026-10-16
 
-- [ ] Run it (this exact shape is what the evidence expects):
+> **Done.** Graded run `xgb-final` (depth 6, eta 0.1, 200 rounds), teed to
+> `docs/lab3-evidence/train-final.log`, Athena query
+> `0fb4a8f2-f5a9-4294-a22f-ad55ba8c53d1`. AUC **0.7773**, precision@top10
+> **0.7233**, recall@top10 **0.3288**, baseline 0.7232, lift **+0.0541** with 95%
+> CI **[0.0347, 0.0738]** — all gates pass. `docs/lab3-evaluation-report.md`
+> written. Three MLflow runs (`xgb-depth4/6/8`) all logged with params and
+> metrics; model registered as v3 `PendingManualApproval`.
+> **Track A ran entirely while paused — no NAT resume was needed, confirmed.**
+
+- [x] Run it (this exact shape is what the evidence expects):
       ```bash
       python churn_training_skeleton.py \
         --feature-group-name northstar-dev-customer-features \
