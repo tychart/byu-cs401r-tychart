@@ -134,8 +134,22 @@ alone deliberately.
 
 ## 4. Cost discipline — this is the biggest recurring risk
 
-Tyler is on a **$200 credit budget and the course alarm is $10/month.** Cost hygiene
-is a first-class requirement here, not a nicety. Measured idle costs:
+Tyler pays for this account **out of pocket**. There is **no $200 new-account credit
+and no promotional credit at all** — verified 2026-10-16, when Cost Explorer reported
+`$0.00` for `RECORD_TYPE = Credit` in both the current and previous month. Every cent
+of measured spend is Tyler's own money. Do not assume a credit buffer absorbs an
+overspend, and never describe a cost as "free because of credits".
+
+**The real alarm is smaller than it looks.** The only budget configured is
+`My Monthly Cost Budget` with a **$1.00** limit, and `aws cloudwatch describe-alarms`
+returns **no alarms at all** — there is no $10 billing alarm in this account. Spend at
+that moment was **$0.4222** MTD (~42% of the $1 budget already gone, all of it
+September/early-October NAT hours). On a **paused** stack the forecast is flat, so the
+budget will not fire and the steady state is ~$0.01–0.05/month. But headroom is only
+~$0.58, so a single `resume-lab3.sh` left running for a day (NAT ≈ $1.20/day) breaches
+it. **Cost hygiene is a first-class requirement here, not a nicety.**
+
+Measured idle costs:
 
 | Resource | Idle cost | Note |
 | --- | --- | --- |
@@ -160,6 +174,27 @@ is a first-class requirement here, not a nicety. Measured idle costs:
 | `scripts/pause-lab3-deep.sh` | Real `terraform destroy -target=module.vpc/glue/sagemaker`, keeps S3 + Feature Store + IAM. **Plans first and aborts if a keep module appears** |
 | `scripts/resume-lab3.sh` | One `apply`; restores either pause |
 | `scripts/teardown-lab2.sh` | Full destroy **including S3**. Only at the very end |
+
+**Verify a pause from the AWS APIs, not from the script's own output.** The script's
+"already gone" message reads the Terraform *state*, which is exactly what would be
+wrong if a destroy had half-finished. Two checks settle it (run 2026-10-16, before a
+48h absence): `aws ec2 describe-nat-gateways` shows the NAT in state **`deleted`**,
+`aws ec2 describe-addresses` returns **0** addresses, and
+`terraform -chdir=infrastructure/environments/dev plan -var enable_nat_gateway=false`
+prints **"No changes"** — that last one is the strongest signal, because it proves the
+config, the state and reality all agree.
+
+A leftover **`blackhole`** route (`0.0.0.0/0 → nat-…` in the private route table) is
+the expected residue of a NAT destroy and is **not** a cost. Do not "fix" it; the
+resume re-creates the NAT route. Also expected: the SageMaker **Studio domain stays
+`InService`** ($0 idle), the **MLflow App** stays `Created` ($0), and the studio
+**EFS** stays mounted at ~6 KB (≈$0.000002/month). Those are all deliberately kept.
+
+**One thing that cannot be enumerated on this account:** `aws glue list-dev-endpoints`
+and `get-dev-endpoints` both fail with *"operation is currently disabled"*, so Glue dev
+endpoints (which bill by the DPU-hour) cannot be positively listed. None are in
+Terraform state and none have been created, but the check itself is unavailable —
+confirm via Cost Explorer instead.
 
 **`pause-lab3.sh` and the Elastic IP.** Destroying the NAT Gateway also reaps its
 ENI, and the EIP `ReleaseAddress` that follows can fail with
