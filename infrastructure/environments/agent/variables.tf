@@ -110,22 +110,28 @@ variable "litellm_api_base" {
   default     = "https://litellm.tychart.com/v1"
 }
 
-variable "litellm_api_key" {
+variable "litellm_secret_name" {
   description = <<-EOT
-    LiteLLM proxy API key for the harness. Supply it out-of-band, never in a
-    committed file:
+    Name of the PRE-EXISTING Secrets Manager secret that holds the LiteLLM proxy
+    API key. Terraform looks the secret up by name and uses only its ARN, so the
+    key value never enters this configuration or Terraform state.
 
-      export TF_VAR_litellm_api_key=sk-...
+    Create it once, outside Terraform:
 
-    or put it in infrastructure/environments/agent/terraform.tfvars, which
-    *.tfvars in .gitignore already excludes. The value is marked sensitive so
-    Terraform will not print it, but it does land in Terraform state (the
-    encrypted, privately-held S3 state bucket).
+      read -rs KEY
+      aws secretsmanager create-secret \
+        --name northstar-agent-litellm-api-key \
+        --secret-string "$KEY"
+      unset KEY
 
-    Create a dedicated key on the proxy for this rather than reusing your
-    personal one, so the lab can be revoked independently.
+    "read -rs" keeps the key out of your shell history. To rotate it later:
+      aws secretsmanager put-secret-value \
+        --secret-id northstar-agent-litellm-api-key --secret-string "$NEW_KEY"
+
+    Note this secret is deliberately NOT managed here, so `terraform destroy`
+    does not delete it and it keeps billing ~$0.40/month. Delete it by hand when
+    the lab is finished (lab3-plan Phase 8).
   EOT
   type        = string
-  sensitive   = true
-  default     = null
+  default     = "northstar-agent-litellm-api-key"
 }

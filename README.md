@@ -136,9 +136,17 @@ Artifacts land in:
 ### Track C: customer service agent
 
 ```bash
+# 1. Once: store a DEDICATED LiteLLM proxy key in Secrets Manager.
+#    `read -rs` keeps it out of your shell history.
+read -rs KEY
+aws secretsmanager create-secret \
+  --name northstar-agent-litellm-api-key \
+  --secret-string "$KEY" --region us-east-1
+unset KEY
+
+# 2. Deploy. Terraform looks the secret up by name and only ever sees its ARN.
 cd infrastructure/environments/agent   # separate root, aws 6.x provider
 cp backend.tf.example backend.tf       # fill in the account ID
-export TF_VAR_litellm_api_key=sk-...   # dedicated LiteLLM proxy key
 terraform init && terraform apply
 
 cd ../../..
@@ -156,9 +164,15 @@ model_backend = "bedrock"            →  openai.gpt-oss-20b-1:0 (Apache-2.0)
 
 Switching is one flag (`-var model_backend=bedrock`) and touches nothing else:
 the gateway, the Cedar `$50` cap, the tools and the trace/cost evidence are all
-independent of the model. The API key is a `sensitive` variable, so supply it as
-`TF_VAR_litellm_api_key` or in the gitignored `terraform.tfvars` — never in a
-committed file. See `docs/lab3-plan.md` Phase 5 for the verified details.
+independent of the model.
+
+The proxy key lives in Secrets Manager, deliberately **not** in Terraform. This
+stack looks the secret up by name and uses only its ARN, so the key value never
+enters the repo, git history, or `terraform.tfstate`, and `terraform destroy` does
+not delete it. Two consequences to remember: the secret must exist *before*
+`terraform plan`, and because Terraform does not own it, it bills ~$0.40/month
+until you delete it by hand (the teardown step in `docs/lab3-plan.md` Phase 8).
+See Phase 5 for the full verified detail.
 
 The five tools live in `agent/tools.py` and are exposed through the AgentCore
 Gateway with Cedar policy enforced in `ENFORCE` mode. `agent/harness_client.py`

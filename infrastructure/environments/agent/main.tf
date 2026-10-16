@@ -260,30 +260,29 @@ resource "aws_bedrockagentcore_policy" "permit_tools" {
 
 # ---------------------------------------------------------------------------
 # LiteLLM backend: the proxy API key, and the harness's permission to read it.
-# These resources do not exist at all when model_backend = "bedrock".
+# Neither exists when model_backend = "bedrock".
+#
+# The secret is created OUT OF BAND, not here, on purpose:
+#   * it survives `terraform destroy`, so re-applying the agent stack never
+#     means re-supplying the key;
+#   * the key value never enters Terraform state, which is where secrets
+#     managed by Terraform normally leak;
+#   * Terraform only ever handles the ARN, which is a pointer, not a secret.
+#
+# Bootstrap once (README and lab3-plan Phase 5 have the full command):
+#   read -rs KEY
+#   aws secretsmanager create-secret --name northstar-agent-litellm-api-key \
+#     --secret-string "$KEY"
+#   unset KEY
+#
+# Because it is not in state, `terraform destroy` will NOT delete it. It bills
+# about $0.40/month until you delete it by hand -- that is a Phase 8 teardown
+# step, not something Terraform will remind you about.
 # ---------------------------------------------------------------------------
 
-# recovery_window_in_days = 0 so `terraform destroy` really deletes the secret.
-# The 7-day default leaves it "scheduled for deletion" and a later apply of the
-# same name fails with ResourceExistsException.
-resource "aws_secretsmanager_secret" "litellm" {
-  count                   = local.use_litellm ? 1 : 0
-  name                    = "${var.name_prefix}-litellm-api-key"
-  description             = "LiteLLM proxy API key used by the ${var.harness_name} harness"
-  recovery_window_in_days = 0
-}
-
-resource "aws_secretsmanager_secret_version" "litellm" {
-  count         = local.use_litellm ? 1 : 0
-  secret_id     = aws_secretsmanager_secret.litellm[0].id
-  secret_string = var.litellm_api_key
-
-  lifecycle {
-    precondition {
-      condition     = var.litellm_api_key != null && var.litellm_api_key != ""
-      error_message = "litellm_api_key is empty. Set it out-of-band, e.g. export TF_VAR_litellm_api_key=sk-... (or use model_backend=\"bedrock\")."
-    }
-  }
+data "aws_secretsmanager_secret" "litellm" {
+  count = local.use_litellm ? 1 : 0
+  name  = var.litellm_secret_name
 }
 
 # A separate role policy rather than another statement inside
@@ -299,7 +298,7 @@ resource "aws_iam_role_policy" "harness_litellm" {
       Sid      = "ReadLiteLlmApiKey"
       Effect   = "Allow"
       Action   = "secretsmanager:GetSecretValue"
-      Resource = aws_secretsmanager_secret.litellm[0].arn
+      Resource = data.aws_secretsmanager_secret.litellm[0].arn
     }]
   })
 }
@@ -373,7 +372,7 @@ resource "aws_bedrockagentcore_harness" "this" {
       content {
         model_id    = var.litellm_model_id
         api_base    = var.litellm_api_base
-        api_key_arn = aws_secretsmanager_secret.litellm[0].arn
+        api_key_arn = data.aws_secretsmanager_secret.litellm[0].arn
         max_tokens  = 1024
       }
     }
