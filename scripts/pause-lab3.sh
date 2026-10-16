@@ -46,11 +46,16 @@ if ! terraform -chdir="${TF_DIR}" state list 2>/dev/null | grep -qE '^module\.st
   exit 1
 fi
 
-# GUARD: if the NAT is already gone, do nothing rather than re-applying blindly.
+# GUARD: if the NAT and its EIP are already gone, do nothing rather than
+# re-applying blindly. BOTH are checked on purpose: a run can destroy the NAT and
+# then fail while releasing its EIP (see the retry below), and a NAT-only guard
+# would then exit 0 and leave a billed Elastic IP allocated indefinitely.
 nat_in_state=$(terraform -chdir="${TF_DIR}" state list 2>/dev/null \
                  | grep -cE '^module\.vpc\.aws_nat_gateway\.' || true)
-if [ "${nat_in_state:-0}" = "0" ]; then
-  echo "Nothing to pause - the NAT Gateway is already absent from state."
+eip_in_state=$(terraform -chdir="${TF_DIR}" state list 2>/dev/null \
+                 | grep -cE '^module\.vpc\.aws_eip\.nat' || true)
+if [ "${nat_in_state:-0}" = "0" ] && [ "${eip_in_state:-0}" = "0" ]; then
+  echo "Nothing to pause - the NAT Gateway and its EIP are already absent from state."
   exit 0
 fi
 
@@ -58,9 +63,46 @@ echo "==> Lab 3 pause (NAT off): keeping S3, Feature Store, Glue catalog and IAM
 echo "    before: NAT Gateway + EIP billing ~\$1.20/day"
 echo
 
-terraform -chdir="${TF_DIR}" apply \
-  -auto-approve -input=false -no-color \
-  -var enable_nat_gateway=false
+# EC2 reaps the NAT's network interface a moment before ReleaseAddress runs, so
+# releasing the EIP can fail with:
+#
+#   InvalidNetworkInterfaceID.NotFound: The networkInterface ID 'eni-...' does
+#   not exist
+#
+# That is transient and clears within a minute or so, but it aborts the apply
+# *after* the NAT is already destroyed - so without a retry the script leaves a
+# detached EIP billing ~\$0.005/hr with no obvious symptom. Retry, but only
+# while the EIP is genuinely still in state: if it is gone the pause worked, and
+# if the apply failed for some other reason we must not spin here.
+attempt=0
+max_attempts=5
+while true; do
+  if terraform -chdir="${TF_DIR}" apply \
+       -auto-approve -input=false -no-color \
+       -var enable_nat_gateway=false; then
+    break
+  fi
+
+  attempt=$((attempt + 1))
+
+  if ! terraform -chdir="${TF_DIR}" state list 2>/dev/null \
+       | grep -qE '^module\.vpc\.aws_eip\.nat'; then
+    echo "ERROR: the pause apply failed, but the EIP is no longer in state." >&2
+    echo "       Read the error above before assuming the pause succeeded." >&2
+    exit 1
+  fi
+
+  if [ "${attempt}" -ge "${max_attempts}" ]; then
+    echo "ERROR: the pause apply still fails after ${max_attempts} attempts." >&2
+    echo "       The EIP is still allocated and billing ~\$0.005/hr." >&2
+    exit 1
+  fi
+
+  echo
+  echo "    apply failed while the EIP is still allocated (transient"
+  echo "    ReleaseAddress error). Retrying in 20s - attempt ${attempt}/${max_attempts}."
+  sleep 20
+done
 
 echo
 echo "[verify] NAT gateways and unattached EIPs still present:"

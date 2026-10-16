@@ -106,6 +106,11 @@ Pinned and load-bearing: **`sagemaker>=2.200,<3.0.0`** (SDK 3.x *removed* the
 `lambda` is a reserved word. Lambda zips `handler.py` to the archive root, which is
 correct. For local tests use `importlib.util.spec_from_file_location`.
 
+`scripts/verify-lab2.sh` embeds bare `python3` for its data-quality block, so run it
+with the venv on `PATH` — `PATH="$(pwd)/.venv/bin:$PATH" bash scripts/verify-lab2.sh`
+— or it prints a spurious `FAIL  pandas/pyarrow available` and exits 1. The failure
+looks like a data problem and is not one.
+
 ### Terraform roots — never mix them
 
 | Root | Provider | State key | Purpose |
@@ -136,7 +141,7 @@ is a first-class requirement here, not a nicety. Measured idle costs:
 | SageMaker Studio domain | $0 | apps bill ~$0.05/hr **only while running** |
 | Studio EFS home | ~$0.30/GB-month | pennies |
 | S3 (all prefixes) | ~$0.023/GB-month | cents/month for this dataset |
-| Feature Store (standard online store) | storage only | **no hourly idle charge** |
+| Feature Store (standard online store) | storage only | **no hourly idle charge** | verified in Cost Explorer — no Feature Store usage type appeared in a month the feature group was live |
 | MLflow **App** | **$0** | serverless, keep it forever |
 | **MLflow Tracking Server** | **$0.60/hr** | **the trap** — breaches the whole budget in 17h |
 | Secrets Manager secret | $0.40/secret-month | avoided — see §6 |
@@ -153,6 +158,13 @@ is a first-class requirement here, not a nicety. Measured idle costs:
 | `scripts/pause-lab3-deep.sh` | Real `terraform destroy -target=module.vpc/glue/sagemaker`, keeps S3 + Feature Store + IAM. **Plans first and aborts if a keep module appears** |
 | `scripts/resume-lab3.sh` | One `apply`; restores either pause |
 | `scripts/teardown-lab2.sh` | Full destroy **including S3**. Only at the very end |
+
+**`pause-lab3.sh` and the Elastic IP.** Destroying the NAT Gateway also reaps its
+ENI, and the EIP `ReleaseAddress` that follows can fail with
+`InvalidNetworkInterfaceID.NotFound`. The error is transient, but it aborts the
+apply *after* the NAT is already gone; the old NAT-only guard then exited 0 on the
+next run and stranded a detached Elastic IP billing ~$0.005/hr with no symptom. The
+script now checks NAT **and** EIP in its guard and retries the apply up to 5 times.
 
 **Why the keep-set is what it is:** destroying `module.feature_store` deletes the
 offline-store Glue table and breaks the Task 1 Athena query, forcing a re-ingest.
@@ -205,9 +217,10 @@ clean-looking report that had verified nothing. Keep that behaviour.
 - **IAM action names are not guessable.** `sagemaker:RegisterModel` is **not** a real
   action (the real one is `sagemaker:CreateModelPackage`) and was a silent no-op for
   a whole lab. When writing a policy, verify the action exists in the service
-  authorization reference. `sagemaker:CreateModelPackageGroup` is still missing from
-  the MLEngineer policy — harmless while training runs under the student's own
-  credentials, but it will bite Lab 4's pipeline.
+  authorization reference. `sagemaker:CreateModelPackageGroup` was missing from the
+  MLEngineer policy and was added 2026-10-16 (with `DescribeModelPackageGroup`) —
+  harmless while training runs under the student's own credentials, but it would
+  have failed Lab 4's pipeline with `AccessDenied` creating the registry group.
 - **Policy/role changes take up to ~60s to propagate** to AgentCore. If an apply or a
   call fails with `AccessDenied` immediately after you added the permission it names,
   wait a minute before changing anything else.
@@ -246,6 +259,14 @@ clean-looking report that had verified nothing. Keep that behaviour.
   ranged 0.7276–0.7431 across four runs without it.
 - **`event_time` is `Fractional` (epoch seconds), not an ISO string.** Comparing it to
   `'2026-04-01'` fails with `TYPE_MISMATCH`.
+- **The offline-store Glue table needs no `MSCK REPAIR`.** It has no `PartitionKeys`
+  and no partition projection (`get-partitions` returns `[]`), yet Athena reads the
+  `year=/month=/day=/hour=` Parquet correctly — verified `SELECT count(*)` = 9999 on
+  2026-10-16. The empty partition list is expected; do not "fix" it.
+- **The training script's default date bounds are `2026-01-01`..`2027-01-01`, on
+  purpose.** `event_time` is the Glue job's wall-clock time, so the offline-store
+  partition is the *ingest* day, not the feature cutoff `T`. Passing the Lab 2
+  window (`2026-04-01`..`2026-06-30`) as the bounds matches zero rows.
 - **`churn_risk_score` is a pure recency heuristic** and doubles as the baseline to
   beat. Excluded from the feature list by default; if included, report metrics with
   and without it.
