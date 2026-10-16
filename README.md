@@ -133,6 +133,21 @@ Artifacts land in:
 | `s3://<bucket>/artifacts/mlflow/` | the MLflow App artifact store |
 | MLflow App / Model Registry | runs and model versions, in AWS (free), exported by the evidence script |
 
+To produce the graded evaluation and export the evidence that lives only in AWS
+(the MLflow runs, the Model Registry entry, the Athena query that actually ran):
+
+```bash
+uv run python scripts/collect_lab3_evidence.py --track C \
+  2>&1 | tee docs/lab3-evidence/collect-output.txt
+```
+
+Called this way the venv is used directly, so bare `python3` never enters the
+picture — the `scripts/collect-lab3-evidence.sh` wrapper shells out to `python3`
+and needs the venv first on `PATH`. The written analysis is
+`docs/lab3-evaluation-report.md`, and it must agree with
+`evaluation_metrics.json`, one MLflow run and the registry metadata: the script
+cross-checks that chain and exits non-zero on any `FAIL`.
+
 ### Track C: customer service agent
 
 ```bash
@@ -223,8 +238,11 @@ terraform apply 2>&1 | tee -a ../../../docs/lab2-extend-output.txt
 aws glue start-job-run --job-name northstar-dev-feature-engineer
 aws glue get-job-runs --job-name northstar-dev-feature-engineer --max-items 1
 
-# 6. Verify (run BEFORE teardown; the output is graded)
+# 6. Verify (run BEFORE teardown; the output is graded).
+#    The venv must be first on PATH: the script shells out to bare `python3`,
+#    and the system one has no pandas/pyarrow, so it reports a spurious FAIL.
 cd ../../..
+set -gx PATH $PWD/.venv/bin $PATH
 bash scripts/verify-lab2.sh 2>&1 | tee docs/lab2-verify-output.txt
 
 # 7. Tear everything down (also removes resources Terraform does not own)
