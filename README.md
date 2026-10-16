@@ -1,5 +1,19 @@
 # NorthStar Retail AI Platform — CS 401R
 
+> **Log in before anything else.** `AWS_PROFILE=tf` is exported in this shell, and
+> the `tf` profile gets its credentials from the `[default]` login session via
+> `credential_process`. So authenticate the **`default`** profile, never `tf`:
+>
+> ```bash
+> aws login --profile default
+> aws sts get-caller-identity    # expect the mgt-admin IAM user
+> ```
+>
+> A bare `aws login` fails with *"Profile 'tf' is already configured with
+> Credential Process credentials"* — that is the wrong profile. Logging in to
+> `default` refreshes the session that Terraform, the AWS CLI and boto3 all
+> inherit through `tf`. Full explanation in [`docs/lab3-plan.md`](docs/lab3-plan.md) Phase 0.
+
 Terraform for the NorthStar ML platform (Labs 1–3): the Lab 2 data pipeline
 (raw customer transactions → cleaned records → engineered features → SageMaker
 Feature Store), the Lab 3 churn model (Track A) and the Lab 3 customer service
