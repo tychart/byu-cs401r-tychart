@@ -18,6 +18,10 @@ module "vpc" {
   public_subnet_cidr  = var.public_subnet_cidr
   private_subnet_cidr = var.private_subnet_cidr
   availability_zone   = var.availability_zone
+
+  # The Lab 2 NAT Gateway is the only meaningful idle cost in this stack.
+  # scripts/pause-lab3.sh flips this to false to pause without touching data.
+  enable_nat_gateway = var.enable_nat_gateway
 }
 
 module "storage" {

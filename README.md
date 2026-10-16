@@ -1,8 +1,12 @@
 # NorthStar Retail AI Platform — CS 401R
 
-Terraform for the NorthStar ML platform (Labs 1–2) plus the Lab 2 data
-pipeline: raw customer transactions → cleaned records → engineered features →
-SageMaker Feature Store.
+Terraform for the NorthStar ML platform (Labs 1–3): the Lab 2 data pipeline
+(raw customer transactions → cleaned records → engineered features → SageMaker
+Feature Store), the Lab 3 churn model (Track A) and the Lab 3 customer service
+agent on Bedrock AgentCore (Track C).
+
+The full Lab 3 work plan, cost model and pause/resume strategy live in
+[`docs/lab3-plan.md`](docs/lab3-plan.md).
 
 ## Lab 2 additions
 
@@ -43,21 +47,109 @@ Data/documentation deliverables live in `docs/`:
 
 ```
 glue-scripts/                     PySpark ETL scripts (uploaded to S3 by Terraform)
+churn_training_skeleton.py        Lab 3 Track A: Athena → XGBoost → MLflow → Registry
+evaluation_harness.py             Lab 3 Track C: scenario evaluation for the agent
+agent/                            Lab 3 Track C: tools, gateway Lambda handler,
+                                  harness client (trace/cost evidence), policy tests
+northstar-policy-docs/            policy corpus bundled into the tools Lambda
+notebooks/                        lab3-demo.ipynb (committed with outputs)
 infrastructure/
   modules/{vpc,storage,iam,sagemaker,glue,feature_store}/
-  environments/dev/               real AWS: the deploy environment
+  environments/dev/               real AWS: the deploy environment (Labs 1–2)
+  environments/agent/             Track C AgentCore stack; aws 6.x, OWN state key
   environments/local/             LocalStack: vpc/storage/iam only, NAT + lifecycle off
-scripts/                          verify-lab1.sh, verify-lab2.sh, teardown-lab2.sh
-docs/                             apply/verify logs, data contract, lineage diagram
+scripts/                          verify-lab1.sh, verify-lab2.sh, teardown-lab2.sh,
+                                  collect-lab3-evidence.sh, teardown-lab3.sh,
+                                  pause-lab3.sh, pause-lab3-deep.sh, resume-lab3.sh
+docs/                             apply/verify logs, data contract, lineage diagram,
+                                  lab3-plan.md, lab3-evaluation-report.md,
+                                  lab3-model-design.md, lab3-evidence/
 ```
+
+Work on the Track C stack always happens inside
+`infrastructure/environments/agent/` — it needs Terraform provider `aws` 6.x
+and keeps its own state key (`agent/terraform.tfstate`). Do not add AgentCore
+resources to `environments/dev/`, which is pinned to 5.x.
 
 ## Prerequisites
 
 - Terraform ≥ 1.5, AWS CLI v2, authenticated credentials for the lab account.
-- For `scripts/verify-lab2.sh`: `python3` with `pandas` and `pyarrow`
-  (the data-quality checks parse Parquet).
+- `uv` for the Python environment (`uv sync`), Python 3.12.
+- For `scripts/verify-lab2.sh`: `pandas` and `pyarrow` (the data-quality checks
+  parse Parquet).
 - Remote state lives in `s3://northstar-tfstate-<account-id>` (see
   `infrastructure/environments/dev/backend.tf`).
+- AWS CLI ≥ 2.36 and `boto3` ≥ 1.43.57 for Lab 3's AgentCore commands
+  (`create-mlflow-app`, `invoke_harness`).
+
+## Lab 3 — train, evaluate, and where artifacts land
+
+### Track A: churn model
+
+The graded run reads the Lab 2 Feature Store **offline store through Athena**
+(never a CSV), trains XGBoost locally, tracks runs in a SageMaker **MLflow
+App** and registers the model in the **Model Registry** as
+`PendingManualApproval`.
+
+```fish
+# one-time, after the Labs 1–2 stack is applied
+aws sagemaker create-mlflow-app --name northstar-mlflow \
+  --artifact-store-uri s3://(terraform -chdir=infrastructure/environments/dev output -raw s3_bucket_name)/artifacts/mlflow/ \
+  --role-arn (terraform -chdir=infrastructure/environments/dev output -raw ml_engineer_role_arn) \
+  --query Arn --output text
+
+# the graded run
+set MLFLOW_APP_ARN arn:aws:sagemaker:us-east-1:<account>:mlflow-app/app-XXXX
+uv run python churn_training_skeleton.py \
+  --feature-group-name northstar-dev-customer-features \
+  --artifacts-bucket northstar-dev-data-<account> \
+  --max-depth 6 --eta 0.1 --num-round 200 \
+  --mlflow-arn $MLFLOW_APP_ARN --run-name xgb-final \
+  --output-data-dir docs/lab3-evidence \
+  2>&1 | tee docs/lab3-evidence/train-final.log
+```
+
+Artifacts land in:
+
+| Path | Contents |
+| --- | --- |
+| `docs/lab3-evidence/` | `train-final.log`, `evaluation_metrics.json`, `slice-evaluation.csv`, plots, Track C evidence |
+| `./model/` (or `--model-dir`) | `model.xgb`, `model_metadata.json` |
+| `s3://<bucket>/artifacts/athena-results/` | Athena result sets |
+| `s3://<bucket>/artifacts/mlflow/` | the MLflow App artifact store |
+| MLflow App / Model Registry | runs and model versions, in AWS (free), exported by the evidence script |
+
+### Track C: customer service agent
+
+```bash
+cd infrastructure/environments/agent   # separate root, aws 6.x provider
+cp backend.tf.example backend.tf       # fill in the account ID
+terraform init && terraform apply
+
+cd ../../..
+uv run python agent/policy_tests.py        # 7/7; the gateway denies credits > $50
+uv run python churn_training_skeleton.py --help
+```
+
+The five tools live in `agent/tools.py` and are exposed through the AgentCore
+Gateway with Cedar policy enforced in `ENFORCE` mode. `agent/harness_client.py`
+writes `docs/lab3-evidence/agent-traces.jsonl` and `agent-cost.csv` on every
+call; `evaluation_harness.LocalAgentEvaluator` drives the six scenarios and
+writes `docs/lab3-evidence/agent_eval.csv`.
+
+### Cost control between work sessions
+
+The Lab 2 NAT Gateway is the only meaningful idle cost (~$1.20/day). Pause it
+without touching any data:
+
+```bash
+bash scripts/pause-lab3.sh        # NAT off; keeps S3 + Feature Store + Glue catalog
+bash scripts/resume-lab3.sh       # back on
+```
+
+`scripts/pause-lab3-deep.sh` destroys the VPC, Glue and Studio layer for real
+while keeping S3, the Feature Store and IAM. Full teardown (including the S3
+bucket) is `scripts/teardown-lab2.sh`, run only at the end of the lab.
 
 ## Run it end to end
 

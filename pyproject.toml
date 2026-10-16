@@ -5,6 +5,16 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "boto3>=1.43.57",
+    "certifi>=2026.7.22",
+    "ipykernel>=7.4.0",
+    "jupyterlab>=4.6.4",
+    "matplotlib>=3.11.2",
+    "mlflow>=3.17.1",
     "pandas>=3.0.6",
     "pyarrow>=25.0.1",
+    "sagemaker>=2.200.0,<3.0.0",
+    "sagemaker-mlflow>=0.5.0",
+    "scikit-learn>=1.9.1",
+    "xgboost>=3.4.1",
 ]

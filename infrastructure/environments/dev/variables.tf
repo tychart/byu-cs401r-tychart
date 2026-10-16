@@ -40,6 +40,25 @@ variable "availability_zone" {
   default     = "us-east-1a"
 }
 
+variable "enable_nat_gateway" {
+  description = <<-EOT
+    Create the Elastic IP and NAT Gateway for private-subnet egress (Lab 2).
+    Set to false to PAUSE the stack between work sessions: the NAT Gateway is
+    the only meaningful idle cost in this environment (~$0.045/hr + ~$0.005/hr
+    for its public IPv4, about $1.20/day). Everything else is untouched, so
+    the S3 data, the Feature Store and the Glue catalog all survive and no
+    data has to be recomputed.
+
+      pause  : terraform apply -var enable_nat_gateway=false
+      resume : terraform apply
+
+    Leave it true while running Glue jobs or SageMaker Studio apps: both live
+    in the private subnet and need the NAT to reach AWS APIs.
+  EOT
+  type        = bool
+  default     = true
+}
+
 variable "sagemaker_instance_type" {
   description = "Default kernel instance type for SageMaker Studio apps"
   type        = string
