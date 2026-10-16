@@ -4,10 +4,19 @@ Snapshot as of commit **`ba6ae22`** (main, pushed). Repo: `~/projects/byu-cs401r
 (branch `main`, remote `github.com:tychart/byu-cs401r-tychart.git`).
 
 **Tracks: A (required) + C (chosen). Track B is NOT attempted.**
-**Current position: Phase 1 complete (2026-10-16) — the platform is rebuilt and
-the Lab 1-2 data is recomputed once. Phase 2 is the next action.**
-Phase 1 artifacts (`docs/lab3-rebuild-output.txt`, `docs/lab2-verify-output.txt`,
-`docs/lab3-pause-output.txt`) and two small infra/doc edits are **uncommitted**.
+**Current position: Phase 2 complete (2026-10-16). Phase 3 — Track A
+implementation — is the next action.** Phases 0-2 are committed (`ba6ae22`,
+`a3bff0c`, `e4d1a12`, `9b5b663`). Nothing is pending in the working tree.
+
+**MLflow App** (free, serverless, kept forever — Labs 4 and 6 log to it):
+
+```
+arn:aws:sagemaker:us-east-1:345594594463:mlflow-app/app-W4LYKOSSDJZE
+```
+
+Export it as `MLFLOW_APP_ARN` for the training script. Verified from this
+machine on 2026-10-16: SigV4 auth works, and the `northstar-churn` experiment
+already exists (id 1). Details in `docs/lab3-evidence/mlflow-app.json`.
 
 ---
 
@@ -28,8 +37,8 @@ Also useful: the agent's long-term memory has a "Lab 3 Track C — model + key s
 | --- | --- |
 | 0 — Prep | ✅ **DONE** |
 | 1 — Rebuild the Lab 1-2 stack + recompute the data **once** | ✅ **DONE** (2026-10-16) |
-| 2 — Create the SageMaker MLflow **App** | ⬜ **NEXT** |
-| 3 — Implement Track A (4 TODO areas in `churn_training_skeleton.py`) | ⬜ |
+| 2 — Create the SageMaker MLflow **App** | ✅ **DONE** (2026-10-16) |
+| 3 — Implement Track A (4 TODO areas in `churn_training_skeleton.py`) | ⬜ **NEXT** |
 | 4 — Graded training run + `docs/lab3-evaluation-report.md` | ⬜ |
 | 5 — Track C Terraform (3 `TODO (student)` items) + deploy | ⬜ |
 | 6 — Track C evaluation, policy tests, failure analysis | ⬜ |
@@ -52,7 +61,10 @@ S3 bucket, Glue catalog/jobs, Feature Store and IAM roles are live. The S3 bucke
 holds `raw/`, `processed/` and `features/` (job output *and* the offline store).
 The `agent/` (AgentCore) stack is **not** applied. Idle cost is storage cents.
 While paused the private subnet has **no internet**: run `bash scripts/resume-lab3.sh`
-before any Glue job or Studio app.
+before any Glue job or Studio app. **Track A (Phases 3-4) should not need a resume
+at all** — training is local, and Athena, the MLflow App and Model Registry are all
+service APIs. Treat that as a claim to confirm at the first Athena run, not as
+established fact.
 
 ---
 

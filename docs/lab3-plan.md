@@ -301,13 +301,21 @@ every copied Python file. Nothing is committed yet.
 
 ---
 
-### Phase 2 — Create the MLflow App (once, ~5 min)
+### Phase 2 — Create the MLflow App (once, ~5 min) ✅ 2026-10-16
 
-- [ ] `aws --version` → needs a recent CLI for `create-mlflow-app` (you have 2.36.49 ✅)
-- [ ] Get inputs:
+> **Done.** `arn:aws:sagemaker:us-east-1:345594594463:mlflow-app/app-W4LYKOSSDJZE`
+> (`northstar-mlflow`, MLflow 3.10.1, Status `Created`, artifact store
+> `s3://northstar-dev-data-345594594463/artifacts/mlflow/`). Captured in
+> `docs/lab3-evidence/mlflow-app.json`; export it as `MLFLOW_APP_ARN`.
+> **Verified from this machine**, not assumed: SigV4 auth works, a read returned
+> the `Default` experiment, and a write created the `northstar-churn` experiment
+> (id 1), so Phase 3's tracking has a working endpoint.
+
+- [x] `aws --version` → needs a recent CLI for `create-mlflow-app` (you have 2.36.49 ✅)
+- [x] Get inputs:
       `terraform -chdir=infrastructure/environments/dev output -raw ml_engineer_role_arn`
       `terraform -chdir=infrastructure/environments/dev output -raw s3_bucket_name`
-- [ ] Create it — note `artifacts/mlflow/`, the only prefix MLEngineer can write:
+- [x] Create it — note `artifacts/mlflow/`, the only prefix MLEngineer can write:
       ```bash
       aws sagemaker create-mlflow-app \
         --name northstar-mlflow \
@@ -315,8 +323,8 @@ every copied Python file. Nothing is committed yet.
         --role-arn arn:aws:iam::345594594463:role/northstar-dev-MLEngineer \
         --query Arn --output text
       ```
-- [ ] Poll `aws sagemaker describe-mlflow-app --arn <ARN>` until `Status: Created` (~5 min)
-- [ ] `export MLFLOW_APP_ARN=<ARN>` (the skeleton reads `$MLFLOW_APP_ARN` by default)
+- [x] Poll `aws sagemaker describe-mlflow-app --arn <ARN>` until `Status: Created` (~5 min)
+- [x] `export MLFLOW_APP_ARN=<ARN>` (the skeleton reads `$MLFLOW_APP_ARN` by default)
 
 > ❌ **Do not create a tracking server.** `create-mlflow-tracking-server` is
 > $0.60/hr and breaches the whole $10 course budget in 16.7 hours. If anything
