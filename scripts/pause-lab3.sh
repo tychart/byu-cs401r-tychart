@@ -36,6 +36,24 @@ if [ ! -d "${TF_DIR}/.terraform" ]; then
   exit 1
 fi
 
+# GUARD: pausing only makes sense when the stack is actually up. This script
+# runs `terraform apply`, so without this check a pause on empty state would
+# CREATE ~37 resources instead of pausing anything.
+if ! terraform -chdir="${TF_DIR}" state list 2>/dev/null | grep -qE '^module\.storage\.'; then
+  echo "ERROR: no Lab 1-2 stack in the ${TF_DIR} state - there is nothing to pause." >&2
+  echo "       'terraform apply' here would CREATE the stack. Apply it first:" >&2
+  echo "       terraform -chdir=${TF_DIR} apply" >&2
+  exit 1
+fi
+
+# GUARD: if the NAT is already gone, do nothing rather than re-applying blindly.
+nat_in_state=$(terraform -chdir="${TF_DIR}" state list 2>/dev/null \
+                 | grep -cE '^module\.vpc\.aws_nat_gateway\.' || true)
+if [ "${nat_in_state:-0}" = "0" ]; then
+  echo "Nothing to pause - the NAT Gateway is already absent from state."
+  exit 0
+fi
+
 echo "==> Lab 3 pause (NAT off): keeping S3, Feature Store, Glue catalog and IAM"
 echo "    before: NAT Gateway + EIP billing ~\$1.20/day"
 echo

@@ -443,12 +443,39 @@ root** — AgentCore needs provider 6.x and the dev root is pinned to 5.x.
 - [ ] **TODO 2** — harness role permission to call the gateway, scoped to this
       gateway's ARN. Symptom if missing: `Failed to load tool 'northstar_tools'
       ... 403 Forbidden`.
-- [ ] **TODO 3** — the Cedar `forbid` for the `$50` cap on
-      `northstar-tools___apply_loyalty_credit` when
-      `context.input.amount > var.credit_cap_dollars`. `amount` is an
-      **integer** in `tool_definitions.json` — compare it as one. The forbid
-      must `depends_on` the permit, or the validator rejects it as "Overly
-      Restrictive: Policy Engine will deny every request".
+- [ ] **TODO 3** — the Cedar `forbid` for the `$50` cap. Mirror `permit_tools`
+      and add `depends_on = [aws_bedrockagentcore_policy.permit_tools]`:
+      ```hcl
+      resource "aws_bedrockagentcore_policy" "cap_loyalty_credit" {
+        name             = "forbid_credit_over_cap"
+        policy_engine_id = aws_bedrockagentcore_policy_engine.this.policy_engine_id
+        validation_mode  = "FAIL_ON_ANY_FINDINGS"
+        definition {
+          cedar {
+            statement = <<-CEDAR
+              forbid (
+                principal,
+                action == AgentCore::Action::"${local.target_name}___apply_loyalty_credit",
+                resource == AgentCore::Gateway::"${aws_bedrockagentcore_gateway.this.gateway_arn}"
+              ) when {
+                context.input.amount > ${var.credit_cap_dollars}
+              };
+            CEDAR
+          }
+        }
+        depends_on = [aws_bedrockagentcore_policy.permit_tools]
+      }
+      ```
+      **Two type traps, both verified against the repo:**
+      - `amount` is declared **`"integer"`** in `tool_definitions.json`, so Cedar
+        sees a `Long`. `var.credit_cap_dollars` is a Terraform `number` that
+        renders as `50`, also a `Long`. Do **not** write `50.0` — a Decimal
+        literal does not compare as you expect against a Long, and the rule
+        silently stops firing.
+      - The forbid must depend on the permit, or the validator rejects it as
+        *"Overly Restrictive: Policy Engine will deny every request"*.
+      Symptom if it does not work: `policy_tests.py` reports `BAD` for the `$51`
+      and `$75` credits, which the gateway should have denied.
 - [ ] `terraform apply` → confirm `idle_session_timeout_seconds` is still **60**
 - [ ] `terraform output -raw harness_arn` / `gateway_url` (or rely on the
       scripts, which read them for you)
@@ -597,6 +624,25 @@ evidence script checks this chain; so does the grader.
 16. **The harness delete takes ~5 minutes.** Let it finish. AWS creates the
     runtime log group itself and Terraform misses it — the script deletes it,
     and it holds full conversations.
+17. **`agent/lambda/` cannot be imported as a Python module.** `lambda` is a
+    reserved word, so `import agent.lambda.handler` is a `SyntaxError`, not an
+    `ImportError`. The kit's Terraform zips `handler.py` and `tools.py` to the
+    archive root, where `import tools` resolves and Lambda loads `handler.handler`
+    as a top-level module — which is correct. If you write a local test that
+    needs the handler, load it by path:
+    `importlib.util.spec_from_file_location("handler", "agent/lambda/handler.py")`
+    with `agent/` on `sys.path`.
+18. **Verified working locally (no AWS needed):** `agent/tools.py` finds the
+    corpus at `northstar-policy-docs/`, `query_policy` returns grounded answers
+    with `POL-XXX-NNN` citations (`{answer, source_documents, confidence}`), the
+    five tool schemas match `handler.DISPATCH` exactly, and
+    `apply_loyalty_credit` already refuses >$50 at the *tool* layer with
+    `success: False, approval_required: True`. That is the second of the three
+    defence layers — the gateway policy (TODO 3) is the third.
+19. **`escalate_to_human` priority values** are `"normal"`/`"urgent"`,
+    not `"high"`. An unrecognised value silently falls back to `"normal"`.
+    The schema does not enumerate them, so the model has to infer it from the
+    description.
 
 **Where I would treat the lab text as approximate:**
 - The **status of Lab 1–2 resources** in the instructions assumes an applied

@@ -53,10 +53,18 @@ if [ ! -d "${TF_DIR}/.terraform" ]; then
 fi
 
 # ── 0. Guardrail: plan first, abort if the keep-set is in it ──────────────────
-# -target on destroy includes the targets and anything that DEPENDS on them.
-# module.storage, module.feature_store and module.iam are dependencies of the
-# targets, not dependents, so they must not appear. If a future refactor
-# reverses an edge, this catches it before anything is deleted.
+# SEMANTICS (verified empirically 2026-10-15 on Terraform 1.16 with a local
+# terraform_data fixture): `destroy -target=X` destroys X and everything that
+# DEPENDS ON X, and spares everything X depends on.
+#
+#   -target=keep       -> keep + its dependent
+#   -target=dependent  -> dependent only, keep SPARED
+#
+# Here the targets are module.vpc, module.glue and module.sagemaker, and the
+# keep modules are dependencies of them (or unrelated), never dependents. So
+# module.storage, module.feature_store and module.iam cannot be destroyed. If a
+# future refactor reverses an edge, the check below catches it before anything
+# is deleted.
 PLAN_FILE=$(mktemp -t lab3-pause-plan.XXXXXX)
 trap 'rm -f "${PLAN_FILE}"' EXIT
 
@@ -70,24 +78,43 @@ if grep -qE '^[[:space:]]*# module\.(storage|feature_store|iam)\.' "${PLAN_FILE}
   echo "ABORT: the plan would destroy a resource in a KEEP module:" >&2
   grep -E '^[[:space:]]*# module\.(storage|feature_store|iam)\.' "${PLAN_FILE}" >&2
   echo >&2
-  echo "Nothing was destroyed. -target on destroy is expected to include the targets" >&2
-  echo "plus anything that DEPENDS on them, never their prerequisites - so this means" >&2
-  echo "a dependency edge was reversed in ${TF_DIR}/main.tf. Check with:" >&2
+  echo "Nothing was destroyed. That means a dependency edge was reversed in" >&2
+  echo "${TF_DIR}/main.tf. Check with:" >&2
   echo "    terraform -chdir=${TF_DIR} graph | grep -E 'storage|feature_store'" >&2
   echo "Safe fallback without fixing the graph: bash scripts/pause-lab3.sh" >&2
   exit 1
 fi
 
-if ! grep -qE '^Plan: ' "${PLAN_FILE}"; then
-  echo "ABORT: no plan summary in the output above; refusing to destroy blind." >&2
+# Nothing to do. When the targeted objects are already gone Terraform prints
+# this sentence and NO "Plan:" line at all, so this check has to come first.
+if grep -qE 'No changes\. No objects need to be destroyed\.' "${PLAN_FILE}"; then
+  echo
+  echo "Nothing to destroy - the compute layer is already paused (or never applied)."
+  exit 0
+fi
+
+# The summary line reads: "Plan: 0 to add, 0 to change, 33 to destroy."
+PLAN_LINE=$(grep -E '^Plan: ' "${PLAN_FILE}" | tail -1)
+if [ -z "${PLAN_LINE}" ]; then
+  echo "ABORT: no 'Plan:' summary line in the output above; refusing to destroy blind." >&2
   exit 1
 fi
 
-if grep -qE '^Plan: 0 to destroy' "${PLAN_FILE}"; then
+DESTROY_COUNT=$(printf '%s\n' "${PLAN_LINE}" \
+  | sed -nE 's/.*,[[:space:]]*([0-9]+) to destroy\..*/\1/p')
+if [ -z "${DESTROY_COUNT}" ]; then
+  echo "ABORT: could not read a destroy count from: ${PLAN_LINE}" >&2
+  exit 1
+fi
+
+if [ "${DESTROY_COUNT}" = "0" ]; then
   echo
   echo "Nothing to destroy - the compute layer is already paused."
   exit 0
 fi
+
+echo
+echo "Plan is valid: ${DESTROY_COUNT} resource(s) to destroy, none from the keep-set."
 
 # ── 1. Orphaned Glue ENIs, BEFORE destroy ────────────────────────────────────
 # Every Glue job run inside the VPC leaves network interfaces behind in the
