@@ -43,6 +43,10 @@ data "aws_iam_policy_document" "ml_engineer" {
       # Model registry. The IAM action is CreateModelPackage; "RegisterModel" is
       # the Pipelines step name, not an IAM action, and silently matched nothing.
       "sagemaker:CreateModelPackage", "sagemaker:DescribeModelPackage", "sagemaker:ListModelPackages",
+      # Lab 4's pipeline runs as this role and must create the model package group
+      # that Lab 3's training script creates out-of-band. Absent here it fails with
+      # AccessDenied on the first pipeline run.
+      "sagemaker:CreateModelPackageGroup", "sagemaker:DescribeModelPackageGroup",
     ]
     resources = ["*"]
   }

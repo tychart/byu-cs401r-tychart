@@ -1,10 +1,10 @@
 NorthStar Lab 2 verification - account 345594594463, region us-east-1
 
 Task 1 - Platform infrastructure (25 pts)
-  PASS  private subnet exists                                subnet-08fc131dd80711222
-  PASS  NAT gateway available                                nat-0b2dbf3086b78a145
-  PASS  domain InService                                     d-frbsodboab7a
-  PASS  domain in private subnet                             subnet-08fc131dd80711222
+  PASS  private subnet exists                                subnet-07f8efe8673523f0f
+  PASS  NAT gateway available                                nat-0edc368576e1b4544
+  PASS  domain InService                                     d-hd9thynfayw2
+  PASS  domain in private subnet                             subnet-07f8efe8673523f0f
   PASS  domain AppNetworkAccessType VpcOnly                  
   PASS  IAM role MLEngineer exists                           
   PASS  IAM role DataEngineer exists                         
@@ -51,11 +51,11 @@ Tasks 4 and 5 - Deliverables and repo quality (30 pts)
   PASS  infrastructure/modules/glue/main.tf present          
   PASS  infrastructure/modules/feature_store/main.tf present 
   PASS  extend output shows Apply complete                   
-  PASS  data contract has Schema section
-  PASS  data contract has Quality Guarantee section
+  PASS  data contract has Schema section                     
+  PASS  data contract has Quality Guarantee section          
   PASS  data contract has SLA section                        
-  PASS  data contract has Versioning section
-  PASS  terraform fmt clean
+  PASS  data contract has Versioning section                 
+  PASS  terraform fmt clean                                  
 
 Summary: 47 passed, 0 failed
 All checks passed. Remember to run scripts/teardown-lab2.sh after you submit.

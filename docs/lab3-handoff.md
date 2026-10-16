@@ -4,7 +4,10 @@ Snapshot as of commit **`ba6ae22`** (main, pushed). Repo: `~/projects/byu-cs401r
 (branch `main`, remote `github.com:tychart/byu-cs401r-tychart.git`).
 
 **Tracks: A (required) + C (chosen). Track B is NOT attempted.**
-**Current position: Phase 0 complete. Phase 1 is the next action.**
+**Current position: Phase 1 complete (2026-10-16) — the platform is rebuilt and
+the Lab 1-2 data is recomputed once. Phase 2 is the next action.**
+Phase 1 artifacts (`docs/lab3-rebuild-output.txt`, `docs/lab2-verify-output.txt`,
+`docs/lab3-pause-output.txt`) and two small infra/doc edits are **uncommitted**.
 
 ---
 
@@ -24,8 +27,8 @@ Also useful: the agent's long-term memory has a "Lab 3 Track C — model + key s
 | Phase | Status |
 | --- | --- |
 | 0 — Prep | ✅ **DONE** |
-| 1 — Rebuild the Lab 1-2 stack + recompute the data **once** | ⬜ **NEXT** |
-| 2 — Create the SageMaker MLflow **App** | ⬜ |
+| 1 — Rebuild the Lab 1-2 stack + recompute the data **once** | ✅ **DONE** (2026-10-16) |
+| 2 — Create the SageMaker MLflow **App** | ⬜ **NEXT** |
 | 3 — Implement Track A (4 TODO areas in `churn_training_skeleton.py`) | ⬜ |
 | 4 — Graded training run + `docs/lab3-evaluation-report.md` | ⬜ |
 | 5 — Track C Terraform (3 `TODO (student)` items) + deploy | ⬜ |
@@ -43,9 +46,13 @@ Verified in Phase 0, all against the live account:
 - `docs/lab3-model-design.md` written with the track declaration
 - No secrets in the repo; secret scan clean
 
-**AWS is currently empty**: no VPC, NAT, S3 data bucket (only the retained Terraform
-state bucket), Feature Store, SageMaker domain, endpoints, AgentCore resources, or
-Secrets Manager secrets. There is nothing billing except pennies of state storage.
+**AWS state after Phase 1 (paused, not empty):** the 39-resource Lab 1-2 stack is
+applied and then **paused** — the NAT Gateway and its EIP are gone, and the VPC,
+S3 bucket, Glue catalog/jobs, Feature Store and IAM roles are live. The S3 bucket
+holds `raw/`, `processed/` and `features/` (job output *and* the offline store).
+The `agent/` (AgentCore) stack is **not** applied. Idle cost is storage cents.
+While paused the private subnet has **no internet**: run `bash scripts/resume-lab3.sh`
+before any Glue job or Studio app.
 
 ---
 
@@ -115,10 +122,20 @@ Everything else is free at rest or cents. Never create an MLflow **Tracking Serv
 
 ---
 
-## 3. Phase 1 — do this now
+## 3. Phase 1 — ✅ DONE (2026-10-16)
 
 Goal: rebuild the Lab 1-2 stack and recompute the data **once**. This is the only
 recompute in the lab. ~20-30 minutes, ~$0.10-0.20. Run from the repo root.
+
+**Outcome.** `terraform apply` → **39 added, 0 changed, 0 destroyed**. Crawler,
+transform job and feature-engineer job all `SUCCEEDED`. `verify-lab2.sh` →
+**47 passed, 0 failed** (`docs/lab2-verify-output.txt`). `features/customers/` and
+the Feature Store offline store each hold **9,999 rows / 9,999 unique customers,
+22.0% churn** (IDs `CUST-10000000`..`CUST-10009999`), and the exact Track A Athena
+dedup query returns the same 9,999/9,999/2,200. Stack then paused:
+NAT 0, EIP 0, `terraform plan` = No changes (`docs/lab3-pause-output.txt`).
+
+**The commands below are kept as the record of what was run.**
 
 ```bash
 # 1. Deploy the platform
@@ -238,3 +255,37 @@ The full evidence map and rubric mapping are in `docs/lab3-plan.md` §7 and §1.
   `terraform apply` and would otherwise **create** the stack.
 - `terraform destroy -target=X` destroys X plus its **dependents** and spares its
   **dependencies** — that is what makes the S3/Feature Store keep-set safe.
+
+### Discovered during the Phase 1 rebuild (2026-10-16)
+
+- **`verify-lab2.sh` needs the uv venv on `PATH`.** Its embedded data-quality block
+  calls bare `python3`, and system `python3` has no pandas/pyarrow, so it prints a
+  `FAIL  pandas/pyarrow available` and the script exits 1. Run it as
+  `PATH="$(pwd)/.venv/bin:$PATH" bash scripts/verify-lab2.sh`. Do not conclude the
+  data is broken from that FAIL alone.
+- **The offline store is queryable even though its Glue table has no partitions.**
+  `northstar_dev_customer_features_1792134849` has `PartitionKeys: null`, empty
+  `Parameters` (no partition projection) and `get-partitions` returns `[]`, yet
+  Athena reads the `data/year=/month=/day=/hour=` Parquet correctly — `SELECT
+  count(*)` returns 9999. **No `MSCK REPAIR TABLE` is needed**; do not "fix" this.
+- **`pause-lab3.sh` can fail on the EIP after the NAT is gone.** The NAT destroys,
+  then `ReleaseAddress` fails with `InvalidNetworkInterfaceID.NotFound` because the
+  NAT's ENI disappears first. The script's guard then sees the NAT absent from
+  state and short-circuits on re-run, so it will *not* retry for you. Finish with
+  `terraform -chdir=infrastructure/environments/dev apply -var
+  enable_nat_gateway=false` (it took 4 attempts); confirm
+  `aws ec2 describe-addresses --query length(Addresses)` is 0.
+- **The Feature Store provisioned online store has no idle charge** (this closes the
+  plan's §9 throughput risk). Cost Explorer shows **no Feature Store usage type**
+  during Sep 2026, when the feature group was live for Lab 2 — only
+  `USE1-Studio:VolumeUsage.gp3`. Leaving `online_store_config` on its provisioned
+  default is correct; do not switch it to OnDemand (that would replace the feature
+  group and delete the offline-store Glue table).
+- **`--training-start-date/--training-end-date` default to 2026-01-01..2027-01-01**
+  and that is deliberate: Lab 2 stamps `event_time` with the Glue job's wall-clock
+  `time.time()`, not the feature cutoff. The offline-store partition is therefore
+  the *ingest* day. Do not pass the Lab 2 window (2026-04-01..2026-06-30) as the
+  bounds or the query matches zero rows.
+- **One free IAM addition was made** (plan §8 "optional"): `sagemaker:CreateModelPackageGroup`
+  and `sagemaker:DescribeModelPackageGroup` on the `MLEngineer` policy, so Lab 4's
+  pipeline can create the registry group. No effect on Labs 3's local run.

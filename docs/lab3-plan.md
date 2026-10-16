@@ -271,18 +271,27 @@ every copied Python file. Nothing is committed yet.
 
 ---
 
-### Phase 1 — Rebuild the platform and the data, once (**the only recompute**)
+### Phase 1 — Rebuild the platform and the data, once (**the only recompute**) ✅ 2026-10-16
 
-- [ ] `terraform -chdir=infrastructure/environments/dev apply 2>&1 | tee docs/lab3-rebuild-output.txt`
-- [ ] Upload raw data:
+> **Done.** 39 resources added; crawler + both Glue jobs `SUCCEEDED`;
+> `verify-lab2.sh` 47 passed / 0 failed; 9,999 rows / 9,999 customers in both
+> `features/customers/` and the offline store; the Track A Athena dedup query
+> returns 9999/9999/2200; paused with NAT 0, EIP 0 and `terraform plan` = No changes.
+> Two notes for the record: the venv must be on `PATH` for `verify-lab2.sh`
+> (its `python3` block needs pandas/pyarrow), and the EIP release needed a direct
+> retry after the script's `InvalidNetworkInterfaceID.NotFound`. See
+> `docs/lab3-handoff.md` §6.
+
+- [x] `terraform -chdir=infrastructure/environments/dev apply 2>&1 | tee docs/lab3-rebuild-output.txt`
+- [x] Upload raw data:
       `aws s3 cp northstar-raw-sample.csv s3://northstar-dev-data-345594594463/raw/customers/northstar-raw-sample.csv`
-- [ ] Crawl: `aws glue start-crawler --name northstar-dev-raw-crawler`, wait for `READY`+`SUCCEEDED`
-- [ ] Transform: `aws glue start-job-run --job-name northstar-dev-transform`, wait for `SUCCEEDED`
-- [ ] Feature engineer: `aws glue start-job-run --job-name northstar-dev-feature-engineer`, wait for `SUCCEEDED`
-- [ ] `bash scripts/verify-lab2.sh 2>&1 | tee docs/lab2-verify-output.txt`
-- [ ] Confirm the feature group is queryable:
+- [x] Crawl: `aws glue start-crawler --name northstar-dev-raw-crawler`, wait for `READY`+`SUCCEEDED`
+- [x] Transform: `aws glue start-job-run --job-name northstar-dev-transform`, wait for `SUCCEEDED`
+- [x] Feature engineer: `aws glue start-job-run --job-name northstar-dev-feature-engineer`, wait for `SUCCEEDED`
+- [x] `PATH="$(pwd)/.venv/bin:$PATH" bash scripts/verify-lab2.sh 2>&1 | tee docs/lab2-verify-output.txt`
+- [x] Confirm the feature group is queryable:
       `aws sagemaker describe-feature-group --feature-group-name northstar-dev-customer-features`
-- [ ] **Then pause immediately** — `bash scripts/pause-lab3.sh` (NAT off, the data is now safe and free to keep)
+- [x] **Then pause immediately** — `bash scripts/pause-lab3.sh` (NAT off, the data is now safe and free to keep)
 
 *Done when:* `features/customers/` and the Feature Store offline store have the
 9,999 customers, and the NAT is off.
@@ -764,7 +773,7 @@ evidence script checks this chain; so does the grader.
 | Risk | Mitigation |
 | --- | --- |
 | `pandas 3.0.6` + `sagemaker 2.257.7` runtime incompatibility in the offline-store path | Resolution succeeded and `sagemaker.feature_store` imports cleanly. If `query.as_dataframe()` breaks, drop to `query.as_dataframe()` → raw `boto3` Athena paging, or pin `pandas<3` in a follow-up commit. |
-| Feature Store online-store throughput defaults to *provisioned* | Check `aws sagemaker describe-feature-group ... --query 'OnlineStoreConfig.ThroughputConfig'`. If it is not `OnDemand`, pin it in `modules/feature_store` so the paused stack really is ~$0. |
+| ~~Feature Store online-store throughput defaults to *provisioned*~~ **CLOSED 2026-10-16** | Verified harmless: the provisioned online store bills **nothing** at idle. Cost Explorer shows no Feature Store usage type for Sep 2026 while the feature group was live for Lab 2 (only `USE1-Studio:VolumeUsage.gp3`). Leave `online_store_config` on its default; switching to OnDemand would replace the feature group and delete the offline-store Glue table. |
 | Track C policy-engine IAM action list is undocumented in the kit | Expected: iterate on the apply error using the AgentCore "Gateway and Policy IAM Permissions" doc page. Budget an hour. |
 | AgentCore availability/quota on a new account | Track A is 35 points and can proceed regardless; sequence A first. |
 | Harness rejects `litellm_model_config` server-side (the one thing a plan cannot prove; the Terraform schema allows it) | Phase 5's one-scenario spike catches it in seconds. Fallback: `-var model_backend=bedrock` → `openai.gpt-oss-20b-1:0`, nothing else changes. |

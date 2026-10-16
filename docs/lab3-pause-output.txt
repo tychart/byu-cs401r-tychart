@@ -1,0 +1,141 @@
+==> Lab 3 pause (NAT off): keeping S3, Feature Store, Glue catalog and IAM
+    before: NAT Gateway + EIP billing ~$1.20/day
+
+
+Warning: Deprecated Parameter
+
+The parameter "dynamodb_table" is deprecated. Use parameter "use_lockfile"
+instead.
+module.iam.data.aws_iam_policy_document.assume_role: Reading...
+module.iam.data.aws_iam_policy_document.assume_role_model_monitor: Reading...
+module.iam.data.aws_iam_policy_document.assume_role_data_engineer: Reading...
+data.aws_caller_identity.current: Reading...
+module.iam.data.aws_iam_policy_document.model_monitor: Reading...
+module.glue.aws_glue_catalog_database.this: Refreshing state... [id=345594594463:northstar_dev]
+module.iam.data.aws_iam_policy_document.ml_engineer: Reading...
+module.iam.data.aws_iam_policy_document.data_engineer: Reading...
+module.vpc.aws_eip.nat[0]: Refreshing state... [id=eipalloc-0fa583f50675ef83f]
+module.vpc.aws_vpc.this: Refreshing state... [id=vpc-0a1f2c47255763415]
+module.iam.data.aws_iam_policy_document.assume_role: Read complete after 0s [id=286244903]
+module.iam.data.aws_iam_policy_document.assume_role_data_engineer: Read complete after 0s [id=4277183666]
+module.iam.data.aws_iam_policy_document.assume_role_model_monitor: Read complete after 0s [id=286244903]
+module.iam.aws_iam_role.ml_engineer: Refreshing state... [id=northstar-dev-MLEngineer]
+module.iam.data.aws_iam_policy_document.model_monitor: Read complete after 0s [id=1566779885]
+module.iam.aws_iam_role.data_engineer: Refreshing state... [id=northstar-dev-DataEngineer]
+module.iam.aws_iam_role.model_monitor: Refreshing state... [id=northstar-dev-ModelMonitor]
+module.iam.aws_iam_policy.model_monitor: Refreshing state... [id=arn:aws:iam::345594594463:policy/northstar-dev-ModelMonitorPolicy]
+module.iam.data.aws_iam_policy_document.data_engineer: Read complete after 0s [id=1911382540]
+module.iam.data.aws_iam_policy_document.ml_engineer: Read complete after 0s [id=1670977958]
+module.iam.aws_iam_policy.data_engineer: Refreshing state... [id=arn:aws:iam::345594594463:policy/northstar-dev-DataEngineerPolicy]
+module.iam.aws_iam_policy.ml_engineer: Refreshing state... [id=arn:aws:iam::345594594463:policy/northstar-dev-MLEngineerPolicy]
+data.aws_caller_identity.current: Read complete after 0s [id=345594594463]
+module.storage.aws_s3_bucket.data: Refreshing state... [id=northstar-dev-data-345594594463]
+module.iam.aws_iam_role_policy_attachment.ml_engineer: Refreshing state... [id=northstar-dev-MLEngineer-20261016071358335400000003]
+module.iam.aws_iam_role_policy_attachment.model_monitor: Refreshing state... [id=northstar-dev-ModelMonitor-20261016071358260700000002]
+module.iam.aws_iam_role_policy_attachment.data_engineer: Refreshing state... [id=northstar-dev-DataEngineer-20261016071358231400000001]
+module.storage.aws_s3_bucket_public_access_block.data: Refreshing state... [id=northstar-dev-data-345594594463]
+module.storage.aws_s3_bucket_versioning.data: Refreshing state... [id=northstar-dev-data-345594594463]
+module.storage.aws_s3_bucket_server_side_encryption_configuration.data: Refreshing state... [id=northstar-dev-data-345594594463]
+module.storage.aws_s3_object.prefix["artifacts/"]: Refreshing state... [id=artifacts/]
+module.glue.aws_s3_object.transform_script: Refreshing state... [id=artifacts/glue/transform.py]
+module.storage.aws_s3_object.prefix["features/"]: Refreshing state... [id=features/]
+module.storage.aws_s3_object.prefix["raw/"]: Refreshing state... [id=raw/]
+module.storage.aws_s3_object.prefix["processed/"]: Refreshing state... [id=processed/]
+module.feature_store.aws_sagemaker_feature_group.this: Refreshing state... [id=northstar-dev-customer-features]
+module.glue.aws_glue_crawler.raw: Refreshing state... [id=northstar-dev-raw-crawler]
+module.glue.aws_s3_object.feature_engineer_script: Refreshing state... [id=artifacts/glue/feature_engineer.py]
+module.vpc.aws_internet_gateway.this: Refreshing state... [id=igw-0beba66e9074ecd60]
+module.vpc.aws_subnet.public: Refreshing state... [id=subnet-00cec9bcdb2526d4e]
+module.vpc.aws_security_group.this: Refreshing state... [id=sg-0f1a4fbf0f3907875]
+module.vpc.aws_subnet.private: Refreshing state... [id=subnet-07f8efe8673523f0f]
+module.vpc.aws_route_table.public: Refreshing state... [id=rtb-03fd9b2571b591741]
+module.vpc.aws_nat_gateway.this[0]: Refreshing state... [id=nat-0edc368576e1b4544]
+module.glue.aws_glue_connection.this: Refreshing state... [id=345594594463:northstar-dev-vpc-connection]
+module.sagemaker.aws_sagemaker_domain.this: Refreshing state... [id=d-hd9thynfayw2]
+module.vpc.aws_route_table_association.public: Refreshing state... [id=rtbassoc-0e1ad5a3b9cc68c2a]
+module.vpc.aws_route_table.private: Refreshing state... [id=rtb-07290fecb81a953a0]
+module.vpc.aws_route_table_association.private: Refreshing state... [id=rtbassoc-07f8c21782670a436]
+module.sagemaker.aws_sagemaker_user_profile.ml_engineer: Refreshing state... [id=arn:aws:sagemaker:us-east-1:345594594463:user-profile/d-hd9thynfayw2/MLEngineer]
+module.glue.aws_glue_job.feature_engineer: Refreshing state... [id=northstar-dev-feature-engineer]
+module.glue.aws_glue_job.transform: Refreshing state... [id=northstar-dev-transform]
+module.storage.aws_s3_bucket_lifecycle_configuration.data[0]: Refreshing state... [id=northstar-dev-data-345594594463]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  - destroy
+
+Terraform will perform the following actions:
+
+  # module.vpc.aws_eip.nat[0] will be destroyed
+  # (because index [0] is out of range for count)
+  - resource "aws_eip" "nat" {
+      - allocation_id            = "eipalloc-0fa583f50675ef83f" -> null
+      - arn                      = "arn:aws:ec2:us-east-1:345594594463:elastic-ip/eipalloc-0fa583f50675ef83f" -> null
+      - association_id           = "eipassoc-08de30ce372c04e1c" -> null
+      - domain                   = "vpc" -> null
+      - id                       = "eipalloc-0fa583f50675ef83f" -> null
+      - network_border_group     = "us-east-1" -> null
+      - network_interface        = "eni-057bc4bb47cd5a011" -> null
+      - private_dns              = "ip-10-0-100-23.ec2.internal" -> null
+      - private_ip               = "10.0.100.23" -> null
+      - public_dns               = "ec2-35-168-65-20.compute-1.amazonaws.com" -> null
+      - public_ip                = "35.168.65.20" -> null
+      - public_ipv4_pool         = "amazon" -> null
+      - tags                     = {
+          - "Name" = "northstar-dev-eip"
+        } -> null
+      - tags_all                 = {
+          - "Environment" = "dev"
+          - "ManagedBy"   = "terraform"
+          - "Name"        = "northstar-dev-eip"
+          - "Project"     = "northstar"
+        } -> null
+      - vpc                      = true -> null
+        # (5 unchanged attributes hidden)
+    }
+
+  # module.vpc.aws_nat_gateway.this[0] will be destroyed
+  # (because index [0] is out of range for count)
+  - resource "aws_nat_gateway" "this" {
+      - allocation_id                      = "eipalloc-0fa583f50675ef83f" -> null
+      - association_id                     = "eipassoc-08de30ce372c04e1c" -> null
+      - connectivity_type                  = "public" -> null
+      - id                                 = "nat-0edc368576e1b4544" -> null
+      - network_interface_id               = "eni-057bc4bb47cd5a011" -> null
+      - private_ip                         = "10.0.100.23" -> null
+      - public_ip                          = "35.168.65.20" -> null
+      - secondary_allocation_ids           = [] -> null
+      - secondary_private_ip_address_count = 0 -> null
+      - secondary_private_ip_addresses     = [] -> null
+      - subnet_id                          = "subnet-00cec9bcdb2526d4e" -> null
+      - tags                               = {
+          - "Name" = "northstar-dev-nat"
+        } -> null
+      - tags_all                           = {
+          - "Environment" = "dev"
+          - "ManagedBy"   = "terraform"
+          - "Name"        = "northstar-dev-nat"
+          - "Project"     = "northstar"
+        } -> null
+    }
+
+Plan: 0 to add, 0 to change, 2 to destroy.
+module.vpc.aws_nat_gateway.this[0]: Destroying... [id=nat-0edc368576e1b4544]
+module.vpc.aws_nat_gateway.this[0]: Still destroying... [id=nat-0edc368576e1b4544, 00m10s elapsed]
+module.vpc.aws_nat_gateway.this[0]: Still destroying... [id=nat-0edc368576e1b4544, 00m20s elapsed]
+module.vpc.aws_nat_gateway.this[0]: Still destroying... [id=nat-0edc368576e1b4544, 00m30s elapsed]
+module.vpc.aws_nat_gateway.this[0]: Still destroying... [id=nat-0edc368576e1b4544, 00m40s elapsed]
+module.vpc.aws_nat_gateway.this[0]: Still destroying... [id=nat-0edc368576e1b4544, 00m50s elapsed]
+module.vpc.aws_nat_gateway.this[0]: Destruction complete after 51s
+module.vpc.aws_eip.nat[0]: Destroying... [id=eipalloc-0fa583f50675ef83f]
+
+Error: deleting EC2 EIP (eipalloc-0fa583f50675ef83f): operation error EC2: ReleaseAddress, https response error StatusCode: 400, RequestID: 6b47caa4-8903-41a0-ac62-802ad38a665b, api error InvalidNetworkInterfaceID.NotFound: The networkInterface ID 'eni-057bc4bb47cd5a011' does not exist
+
+=== Lab 3 pause verification (2026-10-16T07:33:08Z) ===
+NAT gateways        : 0  (want 0)
+Elastic IPs         : 0  (want 0)
+S3 bucket           : present (keeping)
+Feature group       : Created
+features/customers  : 2 parquet
+offline-store data  : 54 parquet
+Glue table          : northstar_dev_customer_features_1792134849
