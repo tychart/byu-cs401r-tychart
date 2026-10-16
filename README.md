@@ -138,12 +138,27 @@ Artifacts land in:
 ```bash
 cd infrastructure/environments/agent   # separate root, aws 6.x provider
 cp backend.tf.example backend.tf       # fill in the account ID
+export TF_VAR_litellm_api_key=sk-...   # dedicated LiteLLM proxy key
 terraform init && terraform apply
 
 cd ../../..
 uv run python agent/policy_tests.py        # 7/7; the gateway denies credits > $50
-uv run python churn_training_skeleton.py --help
 ```
+
+**Model backend.** The starter kit hardcodes Anthropic Claude Haiku 4.5; this
+stack defaults to a model on your own **LiteLLM proxy** instead, and keeps
+Bedrock behind a switch:
+
+```text
+model_backend = "litellm"  (default)  →  deepseek-flash @ https://litellm.tychart.com/v1
+model_backend = "bedrock"            →  openai.gpt-oss-20b-1:0 (Apache-2.0)
+```
+
+Switching is one flag (`-var model_backend=bedrock`) and touches nothing else:
+the gateway, the Cedar `$50` cap, the tools and the trace/cost evidence are all
+independent of the model. The API key is a `sensitive` variable, so supply it as
+`TF_VAR_litellm_api_key` or in the gitignored `terraform.tfvars` — never in a
+committed file. See `docs/lab3-plan.md` Phase 5 for the verified details.
 
 The five tools live in `agent/tools.py` and are exposed through the AgentCore
 Gateway with Cedar policy enforced in `ENFORCE` mode. `agent/harness_client.py`

@@ -38,7 +38,7 @@ Two systems, on top of the platform you already built:
 | **System** | Churn prediction | Customer service agent |
 | **Approach** | XGBoost on Lab 2's Feature Store features | Amazon Bedrock AgentCore (Harness + Gateway + Policy) via Terraform |
 | **Training data** | Feature Store **offline store, via Athena** | — |
-| **Model** | XGBoost, params as CLI args, no hardcoding | Claude Haiku 4.5 through the `us.` inference profile |
+| **Model** | XGBoost, params as CLI args, no hardcoding | **`deepseek-flash` on your own LiteLLM proxy** (default), with Bedrock `openai.gpt-oss-20b-1:0` as a one-flag fallback. **No Anthropic.** See Phase 5 |
 | **Tracking** | SageMaker **MLflow App** (≥3 real runs) | every tool call traced, cost per run |
 | **Registry** | Model Registry, `PendingManualApproval` | — |
 | **Evaluation** | Precision/Recall @ top 10%, AUC, lift CI vs recency baseline, loyalty-tier slices | 6 scenarios (5 required + injection bonus) ≥2 runs, `policy_tests.py` 7/7 |
@@ -141,8 +141,8 @@ basket features, and it is the thing the lift CI proves.
 ```
 your code ──invoke_harness──▶ Harness ─────▶ Gateway ──────────────▶ Lambda
                               managed agent   MCP, IAM auth            agent/tools.py
-                              loop, Haiku 4.5 Policy engine (Cedar)    + policy corpus
-                                              ENFORCE mode
+                              ReAct loop       Policy engine (Cedar)    + policy corpus
+                              deepseek-flash   ENFORCE mode
 ```
 
 - **Harness** — AgentCore runs the reason → call tool → observe → respond loop
@@ -184,10 +184,17 @@ Two things worth internalising before you write any policy:
 | MLflow **Tracking Server** | **$0.60/hr** — never create one | — |
 | Model Registry | $0 | — |
 | AgentCore harness session | $0 | ~$0.003/session at 60s idle |
+| Model tokens (`deepseek-flash` via LiteLLM) | $0 | $0.14 / $0.28 per 1M → **~$0.002 per eval run** |
 
 Caching ~100 MB in S3 costs **~0.2¢/month**; re-running the Glue pipeline costs
 **~$0.03–0.10 and 5–10 minutes** each time. Keeping the data is the cheap
 option, and the pause tooling makes it free to keep.
+
+A full Track C evaluation (6 scenarios, run twice) costs about **4¢**, and
+roughly **90% of that is AgentCore session runtime, not tokens**. Swapping the
+model therefore saves cents, not dollars — the reason to use `deepseek-flash` is
+that it is not Anthropic and it is genuinely good at agentic tool use, not the
+price.
 
 ### The three scripts
 
@@ -430,6 +437,50 @@ in it matches the report, an MLflow run, and the registry metadata.
 Work only in `infrastructure/environments/agent/`. **Do not touch the dev
 root** — AgentCore needs provider 6.x and the dev root is pinned to 5.x.
 
+#### The model backend — already wired, LiteLLM by default
+
+The starter kit hardcodes Anthropic Claude Haiku 4.5. This stack defaults to
+your own LiteLLM proxy instead, with Bedrock kept behind a switch:
+
+```text
+model_backend = "litellm"  (default)  →  deepseek-flash @ https://litellm.tychart.com/v1
+model_backend = "bedrock"            →  openai.gpt-oss-20b-1:0  (Apache-2.0, $0.07/$0.30)
+```
+
+Everything below was verified on 2026-10-15 **before** wiring it up, so none of
+it is a guess:
+
+| Check | Result |
+| --- | --- |
+| Terraform provider supports it | `aws 6.67.0` exposes `litellm_model_config` (`model_id` required; `api_base` / `api_key_arn` optional) |
+| Proxy reachable from AWS | `litellm.tychart.com` → `66.7.118.26`, public IP, valid TLS, `401` = auth enforced. The harness runs `network_mode = "PUBLIC"`, so it can reach it |
+| Model exists on the proxy | `deepseek-flash`, $0.14/$0.28 per 1M, 1M context, prompt caching active |
+| **Native tool calling** | ✅ verified live against the proxy: `lookup_order`, `query_policy`, and the TC-005 adversarial prompt each returned proper `tool_calls` — and on TC-005 it reached for `query_policy`, *not* `apply_loyalty_credit`/`initiate_return` |
+| Both paths plan clean | litellm = 16 to add; bedrock = 13 to add with **zero** Secrets Manager resources |
+
+The switch touches **nothing else**. The gateway, the Cedar `$50` cap, the tools
+Lambda, `agent-traces.jsonl` and `agent-cost.csv` are all independent of the
+model — which is exactly why the lab barely changes.
+
+```bash
+cd infrastructure/environments/agent
+cp backend.tf.example backend.tf           # replace <ACCOUNT_ID> with 345594594463
+export TF_VAR_litellm_api_key=sk-...       # a DEDICATED proxy key, not your personal one
+terraform init && terraform apply
+```
+
+Create a dedicated key on the proxy for the lab so it can be revoked on its own.
+`litellm_api_key` is `sensitive` (Terraform will not print it) but it does land
+in the encrypted, privately-held state bucket; `*.tfvars` and `.env` stay
+gitignored. If the proxy is ever unreachable, `-var model_backend=bedrock`
+switches to `openai.gpt-oss-20b-1:0` with no other change.
+
+> **Spike before investing.** Deploy, then run exactly ONE scenario:
+> `LocalAgentEvaluator(invoke_fn=HarnessAgent().invoke).evaluate_scenario(eh.AGENT_TEST_CASES[0])`.
+> The one thing a plan cannot prove is whether the harness accepts
+> `litellm_model_config` server-side. If it is rejected, flip to Bedrock and
+> carry on — nothing downstream changes.
+
 - [ ] `cp backend.tf.example backend.tf` and replace `<ACCOUNT_ID>` with
       `345594594463`
 - [ ] `terraform init` (provider 6.67.0)
@@ -611,8 +662,12 @@ evidence script checks this chain; so does the grader.
    and it was pure split noise.
 
 **Track C traps:**
-9. **Use the `us.` inference profile.** `anthropic.claude-haiku-4-5-...` alone
-   fails with `ValidationException`. Never Claude 3 Haiku (LEGACY).
+9. **Only applies to the Bedrock fallback.** `anthropic.claude-haiku-4-5-...`
+   invoked by its bare model ID fails with `ValidationException` — Claude 4.5+
+   needs the `us.` cross-region inference profile. Never Claude 3 Haiku
+   (LEGACY). The default LiteLLM backend is unaffected, and so is
+   `openai.gpt-oss-20b-1:0`, which has no inference profile and is invoked
+   on demand by its bare model ID.
 10. **`boto3` ≥ 1.43.57** for `invoke_harness` (you have 1.43.114 ✅).
 11. **IAM propagation lag up to 60s** after adding a permission.
 12. **`runtimeSessionId` must be ≥ 33 chars** — the client handles it.
@@ -684,6 +739,10 @@ evidence script checks this chain; so does the grader.
 | Feature Store online-store throughput defaults to *provisioned* | Check `aws sagemaker describe-feature-group ... --query 'OnlineStoreConfig.ThroughputConfig'`. If it is not `OnDemand`, pin it in `modules/feature_store` so the paused stack really is ~$0. |
 | Track C policy-engine IAM action list is undocumented in the kit | Expected: iterate on the apply error using the AgentCore "Gateway and Policy IAM Permissions" doc page. Budget an hour. |
 | AgentCore availability/quota on a new account | Track A is 35 points and can proceed regardless; sequence A first. |
+| Harness rejects `litellm_model_config` server-side (the one thing a plan cannot prove; the Terraform schema allows it) | Phase 5's one-scenario spike catches it in seconds. Fallback: `-var model_backend=bedrock` → `openai.gpt-oss-20b-1:0`, nothing else changes. |
+| LiteLLM secret value shape (`api_key_arn` may expect the raw key or JSON like `{"api_key": "..."}`) | Store the raw key first — the common case. If the harness gets a 401 from the proxy, store JSON instead; one `secret_string` change. |
+| Proxy unavailable or key revoked during grading | The TA never runs it — the notebook is committed **with outputs**, so the evidence is static. The proxy matters only while you are producing it. |
+| Secret value lands in Terraform state | State lives in the encrypted, private `northstar-tfstate-345594594463` bucket; `*.tfvars`/`.env` stay gitignored. Use a dedicated, revocable proxy key rather than your personal one. |
 | `.terraform.lock.hcl` is git-ignored repo-wide (`**/*.lock.hcl`) | The agent root pins `6.67.0` exactly in `versions.tf`, so the lock file is redundant. Leave as-is, or narrow the ignore rule later. |
 
 ---
@@ -697,3 +756,7 @@ evidence script checks this chain; so does the grader.
 | Python env | Dependencies added to the **existing uv project** (`.venv`) |
 | Data preservation | **NAT-toggle pause by default** + a guarded deep-destroy script; full teardown only at the end |
 | Keep-set across a pause | `module.storage` (S3) + `module.feature_store` (offline-store Glue table) + `module.iam` (MLflow App role) |
+| Track C model backend | **LiteLLM proxy** — `deepseek-flash` at `https://litellm.tychart.com/v1`, key in Secrets Manager. **No Anthropic.** |
+| Track C model fallback | `-var model_backend=bedrock` → `openai.gpt-oss-20b-1:0` (Apache-2.0, $0.07/$0.30). One flag, no other change. |
+| If the adversarial scenario fails | Escalate to bigger **open-weight** models (gpt-oss-120b, Qwen3 32B). Never Anthropic. Report the model and the failure honestly — that is graded content (failure modes + mitigations). |
+| Model wiring | `model_backend` switches `litellm_model_config` ↔ `bedrock_model_config`; the Secrets Manager secret and its IAM policy exist only in the LiteLLM path, so the Bedrock path stays dependency-free |

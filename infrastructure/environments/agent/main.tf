@@ -24,13 +24,29 @@ locals {
   target_name  = "northstar-tools" # Cedar actions are "<target_name>___<tool>"
   gateway_glob = "arn:aws:bedrock-agentcore:${var.region}:${local.account_id}:gateway/${var.gateway_name}-*"
 
-  # Haiku 4.5 through the us. cross-region inference profile. The profile ARN
-  # plus the foundation model in every region the profile can route to.
-  model_id = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
-  model_resources = [
-    "arn:aws:bedrock:${var.region}:${local.account_id}:inference-profile/${local.model_id}",
-    "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
-  ]
+  # ── Model backend ─────────────────────────────────────────────────────────
+  # Default: a model on your own LiteLLM proxy, reached over public HTTPS with
+  # an API key from Secrets Manager. No Anthropic, and no Bedrock model access
+  # needed for the agent loop.
+  #
+  # Fallback: model_backend = "bedrock" uses a Bedrock-hosted open-weight model
+  # (openai.gpt-oss-20b-1:0 by default). Nothing else changes -- the gateway,
+  # the Cedar policies and the tools are all independent of the model.
+  use_litellm = var.model_backend == "litellm"
+
+  # Bedrock IAM resources for the fallback backend. Non-Claude Bedrock models
+  # are invoked on demand by their bare model ID (the us./global. inference
+  # profile requirement is Claude-4.5+-specific), so with an empty prefix there
+  # is no inference-profile ARN to grant.
+  bedrock_invoke_model_id = (
+    var.bedrock_model_profile_prefix == ""
+    ? var.bedrock_model_id
+    : "${var.bedrock_model_profile_prefix}${var.bedrock_model_id}"
+  )
+  bedrock_model_resources = compact([
+    var.bedrock_model_profile_prefix == "" ? "" : "arn:aws:bedrock:${var.region}:${local.account_id}:inference-profile/${local.bedrock_invoke_model_id}",
+    "arn:aws:bedrock:*::foundation-model/${var.bedrock_model_id}",
+  ])
 }
 
 # ---------------------------------------------------------------------------
@@ -243,6 +259,52 @@ resource "aws_bedrockagentcore_policy" "permit_tools" {
 # $75 credits, which the gateway allows.
 
 # ---------------------------------------------------------------------------
+# LiteLLM backend: the proxy API key, and the harness's permission to read it.
+# These resources do not exist at all when model_backend = "bedrock".
+# ---------------------------------------------------------------------------
+
+# recovery_window_in_days = 0 so `terraform destroy` really deletes the secret.
+# The 7-day default leaves it "scheduled for deletion" and a later apply of the
+# same name fails with ResourceExistsException.
+resource "aws_secretsmanager_secret" "litellm" {
+  count                   = local.use_litellm ? 1 : 0
+  name                    = "${var.name_prefix}-litellm-api-key"
+  description             = "LiteLLM proxy API key used by the ${var.harness_name} harness"
+  recovery_window_in_days = 0
+}
+
+resource "aws_secretsmanager_secret_version" "litellm" {
+  count         = local.use_litellm ? 1 : 0
+  secret_id     = aws_secretsmanager_secret.litellm[0].id
+  secret_string = var.litellm_api_key
+
+  lifecycle {
+    precondition {
+      condition     = var.litellm_api_key != null && var.litellm_api_key != ""
+      error_message = "litellm_api_key is empty. Set it out-of-band, e.g. export TF_VAR_litellm_api_key=sk-... (or use model_backend=\"bedrock\")."
+    }
+  }
+}
+
+# A separate role policy rather than another statement inside
+# aws_iam_role_policy.harness, so the Bedrock-only path needs no change.
+resource "aws_iam_role_policy" "harness_litellm" {
+  count = local.use_litellm ? 1 : 0
+  name  = "harness-litellm-secret"
+  role  = aws_iam_role.harness.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid      = "ReadLiteLlmApiKey"
+      Effect   = "Allow"
+      Action   = "secretsmanager:GetSecretValue"
+      Resource = aws_secretsmanager_secret.litellm[0].arn
+    }]
+  })
+}
+
+# ---------------------------------------------------------------------------
 # Harness and its execution role
 # ---------------------------------------------------------------------------
 
@@ -272,7 +334,7 @@ resource "aws_iam_role_policy" "harness" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      { Sid = "BedrockModelInvocation", Effect = "Allow", Action = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"], Resource = local.model_resources },
+      { Sid = "BedrockModelInvocation", Effect = "Allow", Action = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"], Resource = local.bedrock_model_resources },
       { Sid = "EcrPublicTokenAccess", Effect = "Allow", Action = "ecr-public:GetAuthorizationToken", Resource = "*" },
       { Sid = "StsForEcrPublicPull", Effect = "Allow", Action = "sts:GetServiceBearerToken", Resource = "*" },
       { Sid = "XRayTracingAccess", Effect = "Allow", Action = ["xray:PutTraceSegments", "xray:PutTelemetryRecords", "xray:GetSamplingRules", "xray:GetSamplingTargets"], Resource = "*" },
@@ -304,10 +366,24 @@ resource "aws_bedrockagentcore_harness" "this" {
   max_tokens         = 1024
   timeout_seconds    = 120
 
+  # Exactly one of these is emitted; model_backend selects which.
   model {
-    bedrock_model_config {
-      model_id   = local.model_id
-      max_tokens = 1024
+    dynamic "litellm_model_config" {
+      for_each = local.use_litellm ? [1] : []
+      content {
+        model_id    = var.litellm_model_id
+        api_base    = var.litellm_api_base
+        api_key_arn = aws_secretsmanager_secret.litellm[0].arn
+        max_tokens  = 1024
+      }
+    }
+
+    dynamic "bedrock_model_config" {
+      for_each = local.use_litellm ? [] : [1]
+      content {
+        model_id   = local.bedrock_invoke_model_id
+        max_tokens = 1024
+      }
     }
   }
 
@@ -349,5 +425,5 @@ resource "aws_bedrockagentcore_harness" "this" {
     }
   }
 
-  depends_on = [aws_iam_role_policy.harness]
+  depends_on = [aws_iam_role_policy.harness, aws_iam_role_policy.harness_litellm]
 }
