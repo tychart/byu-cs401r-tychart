@@ -185,6 +185,13 @@ wrong if a destroy had half-finished. Two checks settle it (run 2026-10-16, befo
 prints **"No changes"** — that last one is the strongest signal, because it proves the
 config, the state and reality all agree.
 
+**Cost Explorer API calls are not free: $0.01 per request.** Auditing spend eight
+times on 2026-10-17 cost **$0.08** — about half a NAT-hour and the second-largest
+line of that day. At a $1 budget that is not a rounding error. Use one
+month-to-date `get-cost-and-usage`, or the free budget API, rather than iterating on
+queries; service-level results also lag up to 24 h, so a "missing" Bedrock or
+AgentCore line may simply not have posted yet.
+
 A leftover **`blackhole`** route (`0.0.0.0/0 → nat-…` in the private route table) is
 the expected residue of a NAT destroy and is **not** a cost. Do not "fix" it; the
 resume re-creates the NAT route. Also expected: the SageMaker **Studio domain stays
