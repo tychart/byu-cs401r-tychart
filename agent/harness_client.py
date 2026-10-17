@@ -32,13 +32,18 @@ import uuid
 from pathlib import Path
 
 import boto3
+from botocore.exceptions import EventStreamError
 
 EVIDENCE = Path("docs/lab3-evidence")
 TF_DIR = Path("infrastructure/environments/agent")
 
-# Haiku 4.5 through the us. inference profile (AWS Price List, us-east-1, 2026-10-05).
-COST_PER_INPUT_TOKEN = 1.10 / 1_000_000
-COST_PER_OUTPUT_TOKEN = 5.50 / 1_000_000
+# Token prices for the model actually configured on the harness (LiteLLM
+# `deepseek-flash`, $0.14 / $0.28 per 1M tokens). These were Claude Haiku 4.5
+# prices in the starter kit; reporting Haiku prices against a deepseek run would
+# be wrong. Override for the Bedrock fallback (openai.gpt-oss-20b-1:0 is
+# $0.07 / $0.30), e.g. AGENT_COST_INPUT_PER_1M=0.07.
+COST_PER_INPUT_TOKEN = float(os.environ.get("AGENT_COST_INPUT_PER_1M", "0.14")) / 1_000_000
+COST_PER_OUTPUT_TOKEN = float(os.environ.get("AGENT_COST_OUTPUT_PER_1M", "0.28")) / 1_000_000
 # Runtime (memory + vCPU) per session with the 60 s idle timeout, measured
 # 2026-10-12: $0.020 for six one-message sessions. It is billed per session,
 # not per token, and it arrives in CloudWatch 15-20 minutes late, so this is an
@@ -86,39 +91,52 @@ class HarnessAgent:
 
         text, calls, usage, stop = [], [], {"inputTokens": 0, "outputTokens": 0}, None
         open_call = None
-        for ev in resp["stream"]:
-            now = time.time()
-            if "contentBlockStart" in ev:
-                start = ev["contentBlockStart"].get("start", {})
-                if "toolUse" in start:
-                    open_call = {"tool": start["toolUse"].get("name", "").split("___")[-1],
-                                 "input": "", "output": "", "t0": now}
-                    calls.append(open_call)
-                elif "toolResult" in start and calls:
-                    calls[-1]["status"] = start["toolResult"].get("status", "success")
-                    calls[-1]["latency_ms"] = round((now - calls[-1]["t0"]) * 1000, 1)
-            elif "contentBlockDelta" in ev:
-                d = ev["contentBlockDelta"].get("delta", {})
-                if "text" in d:
-                    text.append(d["text"])
-                elif "toolUse" in d and open_call is not None:
-                    open_call["input"] += d["toolUse"].get("input", "")
-                elif "toolResult" in d and calls:
-                    for block in d["toolResult"]:
-                        calls[-1]["output"] += block.get("text", "") if isinstance(block, dict) else str(block)
-            elif "messageStop" in ev:
-                stop = ev["messageStop"].get("stopReason")
-            elif "metadata" in ev:
-                u = ev["metadata"].get("usage", {})
-                usage["inputTokens"] += u.get("inputTokens", 0)
-                usage["outputTokens"] += u.get("outputTokens", 0)
-            else:
-                for k in ("validationException", "internalServerException", "runtimeClientError"):
-                    if k in ev:
-                        raise RuntimeError(f"{k}: {ev[k]}")
+        error = None
+        # A stream can fail mid-turn: the harness raises runtimeClientError, for
+        # example when the model hits its output-token ceiling (observed on
+        # TC-003 with max_tokens=1024). Letting that escape aborts the WHOLE
+        # evaluation, so one scenario's generation failure loses the other five
+        # results. Record it against this scenario and return the partial reply
+        # instead: the evaluator then scores it as a normal failure.
+        try:
+            for ev in resp["stream"]:
+                now = time.time()
+                if "contentBlockStart" in ev:
+                    start = ev["contentBlockStart"].get("start", {})
+                    if "toolUse" in start:
+                        open_call = {"tool": start["toolUse"].get("name", "").split("___")[-1],
+                                     "input": "", "output": "", "t0": now}
+                        calls.append(open_call)
+                    elif "toolResult" in start and calls:
+                        calls[-1]["status"] = start["toolResult"].get("status", "success")
+                        calls[-1]["latency_ms"] = round((now - calls[-1]["t0"]) * 1000, 1)
+                elif "contentBlockDelta" in ev:
+                    d = ev["contentBlockDelta"].get("delta", {})
+                    if "text" in d:
+                        text.append(d["text"])
+                    elif "toolUse" in d and open_call is not None:
+                        open_call["input"] += d["toolUse"].get("input", "")
+                    elif "toolResult" in d and calls:
+                        for block in d["toolResult"]:
+                            calls[-1]["output"] += block.get("text", "") if isinstance(block, dict) else str(block)
+                elif "messageStop" in ev:
+                    stop = ev["messageStop"].get("stopReason")
+                elif "metadata" in ev:
+                    u = ev["metadata"].get("usage", {})
+                    usage["inputTokens"] += u.get("inputTokens", 0)
+                    usage["outputTokens"] += u.get("outputTokens", 0)
+                else:
+                    for k in ("validationException", "internalServerException", "runtimeClientError"):
+                        if k in ev:
+                            raise RuntimeError(f"{k}: {ev[k]}")
+        except (EventStreamError, RuntimeError) as exc:
+            error = str(exc)
+            stop = f"error: {error[:300]}"
 
         reply = "".join(text)
         tools = [c["tool"] for c in calls]
+        if error and not reply:
+            reply = f"[agent error before any reply: {error[:400]}]"
         if self.record:
             self._record(sid, calls, usage, stop, time.time() - t_start)
         return reply, tools

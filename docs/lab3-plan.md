@@ -478,6 +478,23 @@ in it matches the report, an MLflow run, and the registry metadata.
 
 ### Phase 5 — Track C Terraform (3 TODOs)
 
+> **Done 2026-10-17.** `backend.tf` created (key `agent/terraform.tfstate`). The
+> first apply was run deliberately without the IAM statement and captured the
+> expected failure — `ValidationException: Access denied while calling
+> GetPolicyEngine` after 2m20s — in
+> `docs/lab3-evidence/todo1-first-apply-error.md`. Fixes: **TODO 1** two
+> statements (`GetPolicyEngine` on the engine ARN; `AuthorizeAction` +
+> `PartiallyAuthorizeActions` on engine ARN + `local.gateway_glob`); **TODO 2**
+> `bedrock-agentcore:InvokeGateway` on the exact gateway ARN; **TODO 3** the Cedar
+> `forbid` with `depends_on` the permit. Second apply: 5 added, 2 changed.
+> **One unplanned trap, expensive to find:** `litellm_model_id` must be
+> **`litellm_proxy/deepseek-flash`**, not the bare `deepseek-flash`. The bare ID
+> applies cleanly and then fails the first invocation with `litellm.BadRequestError:
+> LLM Provider NOT provided`. Deployed: gateway `northstar-tools-gw-bag5vgkiai`,
+> harness `northstar_agent-M5tgP8KEdv` (model `litellm_proxy/deepseek-flash`,
+> idle timeout 60 s, `max_tokens` raised to 4096), policy engine
+> `northstar_agent_policies-r5bn3ua5af`.
+
 Work only in `infrastructure/environments/agent/`. **Do not touch the dev
 root** — AgentCore needs provider 6.x and the dev root is pinned to 5.x.
 
@@ -487,9 +504,14 @@ The starter kit hardcodes Anthropic Claude Haiku 4.5. This stack defaults to
 your own LiteLLM proxy instead, with Bedrock kept behind a switch:
 
 ```text
-model_backend = "litellm"  (default)  →  deepseek-flash @ https://litellm.tychart.com/v1
+model_backend = "litellm"  (default)  →  litellm_proxy/deepseek-flash @ https://litellm.tychart.com/v1
 model_backend = "bedrock"            →  openai.gpt-oss-20b-1:0  (Apache-2.0, $0.07/$0.30)
 ```
+
+The `litellm_proxy/` prefix is **required**: the proxy's model is `deepseek-flash`,
+but the harness calls `litellm.completion()` internally, and the bare ID applies
+cleanly and then fails the first invocation with `LLM Provider NOT provided`.
+Discovered the hard way on 2026-10-17; see the Phase 5 note.
 
 Everything below was verified on 2026-10-15 **before** wiring it up, so none of
 it is a guess:
@@ -605,6 +627,17 @@ If the proxy is ever unreachable, `-var model_backend=bedrock` switches to
 
 ### Phase 6 — Track C evaluation (15 pts) and failure analysis (10 pts)
 
+> **Done 2026-10-17.** `policy_tests.py` **7/7** on the first run: $51 and $75
+> DENY at the gateway, the two $40 credits ALLOW ($80 — the documented hole).
+> Evaluation via a new `scripts/run_agent_eval.py` (repeatable outside the
+> notebook). Six passes are kept in `agent_eval.csv`: `pre-fix-1/2`, `iter2-1/2`,
+> and the final `eval-1`/`eval-2`, which are **6/6 each** with `escalate_to_human`
+> as a tool call for TC-003 and TC-005. Three real failures found and fixed, all
+> in `docs/lab3-evidence/track-c-failures.md`: the required split-credit hole, a
+> 1024-token output ceiling that aborted a whole suite, and escalation narrated
+> instead of executed (the harness's prose fallback scored it PASS). Total cost
+> of all six passes: **$0.1496**.
+
 - [ ] `python agent/policy_tests.py` → **7/7**, writes
       `docs/lab3-evidence/policy-tests.json`. The `$51` and `$75` credits must
       come back `DENY`; the two `$40` split credits come back `ALLOW` (that is
@@ -641,6 +674,13 @@ If the proxy is ever unreachable, `-var model_backend=bedrock` switches to
 
 ### Phase 7 — Design doc and demo notebook
 
+> **Done 2026-10-17.** `docs/lab3-model-design.md` §3 (agent vs simpler pipeline,
+> the three cap layers, which one to trust alone) and §4 (session-scoped ledger;
+> escalation as a trace contract) written. `notebooks/lab3-demo.ipynb` executed
+> by nbconvert from the repo root: 10 code cells, execution counts **1–10**, no
+> errors, committed with outputs. It reads the frozen Track A evidence (no new
+> registry version) and invokes the agent live for TC-001 and TC-005.
+
 - [ ] `docs/lab3-model-design.md` (~700 words + track declaration at top):
       1. why **gradient boosting** for 10k rows × 13 tabular features with an
          interpretability requirement — and what would make you switch
@@ -660,6 +700,17 @@ If the proxy is ever unreachable, `-var model_backend=bedrock` switches to
 ---
 
 ### Phase 8 — Evidence, teardown, tag
+
+> **Done 2026-10-17.** `collect-lab3-evidence.sh --track C` → **33 OK, 0 WARN,
+> 0 FAIL** (with the venv on `PATH`). `agentcore-config.json` exported while the
+> stack was up, then `teardown-lab3.sh` destroyed it: harness, gateway, policy
+> engine, runtime, the service-managed token-vault secret and the runtime log
+> group all gone (verified independently: 0 of each, 0 secrets, 0 log groups).
+> NAT and EIPs are 0, so the whole submission idles at storage cents. MLflow App
+> deliberately kept.
+> **Caveat worth repeating:** `teardown-lab3.sh` writes
+> `docs/lab3-teardown-output.txt` itself via `tee`; do not redirect stdout to that
+> path as well or the file is garbled.
 
 Order matters: the AgentCore export only exists while the stack is up.
 

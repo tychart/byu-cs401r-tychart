@@ -86,7 +86,7 @@
       "properties": {
         "customer_id": {
           "type": "string",
-          "description": "Customer account ID"
+          "description": "Customer account ID if the customer has provided one. OMIT THIS FIELD rather than guessing or refusing to escalate when it is unknown."
         },
         "issue_summary": {
           "type": "string",
@@ -98,7 +98,6 @@
         }
       },
       "required": [
-        "customer_id",
         "issue_summary"
       ]
     }

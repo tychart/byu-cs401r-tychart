@@ -4,7 +4,7 @@ Guidance for AI coding agents working in this repository. Read this before your
 first command. It is deliberately short on narrative and long on the things that
 have actually cost time or money here.
 
-**Last updated: 2026-10-16 (Lab 3 kickoff).**
+**Last updated: 2026-10-17 (Lab 3 complete, tagged `lab3-submit`).**
 
 > ## Maintenance directive
 >
@@ -24,7 +24,8 @@ have actually cost time or money here.
 
 Coursework for **CS 401R** (BYU), a fictional retailer "NorthStar" whose ML
 platform is built across seven labs. One repository for all labs; each lab extends
-the last. **Do not create a new repo per lab.** Current position: **Lab 3**.
+the last. **Do not create a new repo per lab.** Current position: **Lab 3 complete**
+(tag `lab3-submit`, 2026-10-17) — Track A and Track C both graded-ready; Lab 4 next.
 
 ```
 raw/customers/  ──crawler──▶  Glue catalog  ──transform──▶  processed/  ──features──▶  features/  ──▶  SageMaker Feature Store
@@ -209,6 +210,17 @@ queried the offline store, logged three MLflow runs and registered a model packa
 with the NAT destroyed. Only Glue jobs and Studio apps need private-subnet egress,
 and the data is already built. Track A work therefore costs storage cents.
 
+**Track C needs no NAT resume either — verified 2026-10-17.** The AgentCore stack
+was created, updated five times and evaluated twice with the dev NAT destroyed. The
+harness runs `network_mode = "PUBLIC"`, the tools Lambda is outside the VPC, the
+LiteLLM proxy is public, and `terraform` talks to public AWS endpoints. Nothing in
+Track C touches the private subnet, so the whole lab runs paused.
+
+**Track C measured cost:** ~**$0.025 per full 6-scenario pass**, and roughly 90% of
+that is AgentCore session runtime at the 60 s idle timeout, not model tokens
+($0.005/run). Six passes totalled $0.1496. Raising `max_tokens` costs nothing when
+unused; lowering the idle timeout is the only lever that matters.
+
 **Why the keep-set is what it is:** destroying `module.feature_store` deletes the
 offline-store Glue table and breaks the Task 1 Athena query, forcing a re-ingest.
 The S3 Parquet survives, but the catalog entry does not. Recomputing the Glue
@@ -242,6 +254,14 @@ exactly these:
 Also: the AgentCore harness takes ~5 minutes to delete, and AWS creates its runtime
 log group itself (Terraform misses it) — it has no retention limit and holds full
 customer conversations.
+
+**`teardown-lab3.sh` writes its own evidence file.** Its verification block is piped
+to `tee docs/lab3-teardown-output.txt`, so
+`bash scripts/teardown-lab3.sh > docs/lab3-teardown-output.txt` gives **two writers
+on one file**: the outer redirect truncates, `tee` truncates again, and the result is
+a garbled report that starts halfway through the checks (this happened 2026-10-17).
+Run it with **no redirect**; the file appears on its own. Re-running it is safe and
+idempotent — `terraform destroy` reports `0 destroyed` the second time.
 
 **A failed AWS call is a FAILED check, never "OK".** An early version of the teardown
 script treated an errored AWS call as "zero resources found" and produced a
@@ -283,6 +303,44 @@ clean-looking report that had verified nothing. Keep that behaviour.
   variable.
 - **Run the Athena query under your own credentials, not `MLEngineer`.** That role has
   no Athena, Glue catalog or Feature Store permissions by design.
+- **`liteLlmModelConfig.modelId` must be provider-prefixed.** Use
+  `litellm_proxy/deepseek-flash`, not the bare `deepseek-flash` from `GET /v1/models`.
+  The harness calls `litellm.completion()` internally and LiteLLM refuses to guess a
+  provider, so a bare ID fails on the **first invocation** with
+  `litellm.BadRequestError: LLM Provider NOT provided` — apply succeeds, nothing
+  catches it until a scenario runs. `openai/<model>` is the equivalent prefix for a
+  plain OpenAI-compatible endpoint.
+- **The gateway execution role needs three AgentCore permissions,** not one:
+  `GetPolicyEngine` on the policy-engine ARN, plus `AuthorizeAction` and
+  `PartiallyAuthorizeActions` on **both** the policy-engine and gateway ARNs
+  (`policy-permissions.html`). `CreateGateway` validates the role before creating
+  anything and names only **one** missing action per attempt, after ~2.5 min of
+  waiting. Add all three at once. The harness role separately needs
+  `bedrock-agentcore:InvokeGateway` on the gateway ARN or every tool load returns
+  403.
+- **`max_tokens = 1024` is too small for a reasoning model.** deepseek-flash emits
+  its analysis as reasoning tokens; TC-003 ended the turn with `runtimeClientError:
+  Model stopped generating due to maximum token limit`. That arrives as an exception
+  while iterating the event stream, so an unguarded client aborts the entire
+  evaluation instead of failing one scenario. `harness_client.py` now catches it and
+  records `stop_reason = "error: …"`; the ceiling is 4096.
+- **A required tool argument the customer never supplies blocks the tool call.**
+  `escalate_to_human` required `customer_id`, so the model narrated an escalation in
+  prose instead of calling it — and the harness's prose fallback still scored PASS.
+  `customer_id` is now optional in `tool_definitions.json` (the handler already
+  defaults to `UNKNOWN`). Check required arguments against the conversations you
+  actually expect.
+- **Temporal (session-aware) policies are unusable through a harness today.** They
+  need a caller-generated `x-amzn-bedrock-agentcore-policy-session-id` header, and
+  `InvokeHarness` / `HarnessAgentCoreGatewayConfig` expose no policy-session field
+  (verified botocore 1.43.114). Adding one to the engine without that header makes
+  every tool call fail validation. The gateway role would also need
+  `GetWorkloadAccessToken`. That is why the split-credit hole is documented rather
+  than fixed.
+- **`harness_client.py` ships with Anthropic Haiku prices.** They are now
+  env-overridable (`AGENT_COST_INPUT_PER_1M` / `AGENT_COST_OUTPUT_PER_1M`) and default
+  to deepseek-flash's $0.14/$0.28. Reporting Haiku prices against a deepseek run
+  would be a wrong number, not a rounding error.
 
 ---
 

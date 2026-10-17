@@ -167,15 +167,33 @@ resource "aws_iam_role_policy" "gateway" {
         Action   = "lambda:InvokeFunction"
         Resource = aws_lambda_function.tools.arn
       },
-      # TODO (student) 1: the gateway enforces Cedar policies by calling the
-      # policy engine. Add a statement that lets this role do that.
-      # Symptom if missing: terraform apply fails creating the gateway with
-      # "Access denied while calling GetPolicyEngine". CreateGateway checks
-      # this role up front and names ONE missing action per attempt, so expect
-      # to iterate. Read the AgentCore developer guide page "AgentCore Gateway
-      # and Policy in AgentCore IAM Permissions" (Gateway Execution Role) and
-      # add them all at once instead. Scope Resource to the policy engine ARN
-      # and local.gateway_glob.
+      # TODO 1 (done): the gateway executes Cedar by calling the policy engine.
+      # Three actions, split into the two statements the AWS docs prescribe
+      # ("AgentCore Gateway and Policy in AgentCore IAM Permissions"):
+      # GetPolicyEngine on the engine alone, and the two authorization calls on
+      # BOTH the engine and the gateway. Missing any of them fails CreateGateway
+      # with "Access denied while calling GetPolicyEngine"; see
+      # docs/lab3-evidence/todo1-first-apply-error.md for the captured error.
+      # The gateway ARN cannot be referenced here (this role is an input to
+      # creating it), so the engine's own ARN plus the name glob scope it.
+      {
+        Sid      = "PolicyEngineConfiguration"
+        Effect   = "Allow"
+        Action   = "bedrock-agentcore:GetPolicyEngine"
+        Resource = aws_bedrockagentcore_policy_engine.this.policy_engine_arn
+      },
+      {
+        Sid    = "PolicyEngineAuthorization"
+        Effect = "Allow"
+        Action = [
+          "bedrock-agentcore:AuthorizeAction",
+          "bedrock-agentcore:PartiallyAuthorizeActions",
+        ]
+        Resource = [
+          aws_bedrockagentcore_policy_engine.this.policy_engine_arn,
+          local.gateway_glob,
+        ]
+      },
     ]
   })
 }
@@ -257,15 +275,35 @@ resource "aws_bedrockagentcore_policy" "permit_tools" {
   depends_on = [aws_bedrockagentcore_gateway_target.tools]
 }
 
-# TODO (student) 3: the $50 credit cap. Write a Cedar forbid policy that blocks
-# northstar-tools___apply_loyalty_credit when context.input.amount exceeds
-# var.credit_cap_dollars, as a resource "aws_bedrockagentcore_policy" "cap_loyalty_credit".
-# Model it on permit_tools above. Two things the validator will teach you the hard way:
-#   - A forbid created before the permit exists is rejected as "Overly Restrictive:
-#     Policy Engine will deny every request". Make it depend on the permit.
-#   - amount is an integer in tool_definitions.json. Compare it as one.
-# Symptom if missing: python agent/policy_tests.py reports BAD for the $51 and
-# $75 credits, which the gateway allows.
+# TODO 3 (done): the $50 credit cap, enforced by the platform rather than by
+# the prompt or the tool code. Two constraints the Cedar validator enforces:
+#   - depends_on the permit. A forbid evaluated before any permit exists is
+#     rejected as "Overly Restrictive: Policy Engine will deny every request".
+#   - amount is declared "integer" in tool_definitions.json, so Cedar sees a
+#     Long. credit_cap_dollars renders as 50 (also a Long). Do not write 50.0:
+#     a Decimal literal does not compare as expected against a Long and the
+#     rule silently stops firing.
+# This is a PER-CALL predicate. Two $40 credits each pass it and total $80;
+# that hole is required content in docs/lab3-evidence/track-c-failures.md.
+resource "aws_bedrockagentcore_policy" "cap_loyalty_credit" {
+  name             = "forbid_credit_over_cap"
+  policy_engine_id = aws_bedrockagentcore_policy_engine.this.policy_engine_id
+  validation_mode  = "FAIL_ON_ANY_FINDINGS"
+  definition {
+    cedar {
+      statement = <<-CEDAR
+        forbid (
+          principal,
+          action == AgentCore::Action::"${local.target_name}___apply_loyalty_credit",
+          resource == AgentCore::Gateway::"${aws_bedrockagentcore_gateway.this.gateway_arn}"
+        ) when {
+          context.input.amount > ${var.credit_cap_dollars}
+        };
+      CEDAR
+    }
+  }
+  depends_on = [aws_bedrockagentcore_policy.permit_tools]
+}
 
 # ---------------------------------------------------------------------------
 # LiteLLM backend: the proxy API key.
@@ -399,10 +437,17 @@ resource "aws_iam_role_policy" "harness" {
           "arn:aws:bedrock-agentcore:${var.region}:${local.account_id}:workload-identity-directory/default/workload-identity/harness_${var.harness_name}-*",
         ]
       },
-      # TODO (student) 2: the harness calls your tools through the gateway.
-      # Add the one statement that allows it, scoped to this gateway's ARN.
-      # Symptom if missing: every invocation fails with "Failed to load tool
-      # 'northstar_tools' ... 403 Forbidden" on the gateway URL.
+      # TODO 2 (done): the harness calls the tools through the gateway with
+      # SigV4 (outbound_auth { aws_iam = true } in the harness tool block), so
+      # it needs InvokeGateway on that gateway. The exact ARN is known by apply
+      # time, so this is not the name glob. Missing it fails every invocation
+      # with "Failed to load tool 'northstar_tools' ... 403 Forbidden".
+      {
+        Sid      = "InvokeNorthStarGateway"
+        Effect   = "Allow"
+        Action   = "bedrock-agentcore:InvokeGateway"
+        Resource = aws_bedrockagentcore_gateway.this.gateway_arn
+      },
     ]
   })
 }
@@ -411,8 +456,13 @@ resource "aws_bedrockagentcore_harness" "this" {
   harness_name       = var.harness_name
   execution_role_arn = aws_iam_role.harness.arn
   max_iterations     = 8
-  max_tokens         = 1024
-  timeout_seconds    = 120
+  # Output-token ceiling. The kit's 1024 was too small for a reasoning model:
+  # deepseek-flash emitted its policy analysis as reasoning tokens too, and TC-003
+  # ended the turn with "Model stopped generating due to maximum token limit"
+  # (captured in docs/lab3-evidence/track-c-failures.md). Only tokens actually
+  # produced are billed, so a higher ceiling costs nothing when unused.
+  max_tokens      = 4096
+  timeout_seconds = 120
 
   # Exactly one of these is emitted; model_backend selects which.
   model {
@@ -422,7 +472,7 @@ resource "aws_bedrockagentcore_harness" "this" {
         model_id    = var.litellm_model_id
         api_base    = var.litellm_api_base
         api_key_arn = aws_bedrockagentcore_api_key_credential_provider.litellm[0].credential_provider_arn
-        max_tokens  = 1024
+        max_tokens  = 4096
       }
     }
 
@@ -430,7 +480,7 @@ resource "aws_bedrockagentcore_harness" "this" {
       for_each = local.use_litellm ? [] : [1]
       content {
         model_id   = local.bedrock_invoke_model_id
-        max_tokens = 1024
+        max_tokens = 4096
       }
     }
   }

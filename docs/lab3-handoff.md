@@ -4,8 +4,40 @@ Snapshot as of commit **`ba6ae22`** (main, pushed). Repo: `~/projects/byu-cs401r
 (branch `main`, remote `github.com:tychart/byu-cs401r-tychart.git`).
 
 **Tracks: A (required) + C (chosen). Track B is NOT attempted.**
-**Current position: Phases 0-4 complete (2026-10-16) — Track A is implemented,
-run and evaluated. Phase 5 (Track C Terraform) is the next action.**
+**Current position: Phases 0-7 complete (2026-10-17); Phase 8 (teardown + tag)
+finished in this pass — see the status block below.**
+
+## Update 2026-10-17 — Track C built, evaluated and torn down
+
+**Track C is complete.** AgentCore deployed from
+`infrastructure/environments/agent/`, all three TODOs implemented, evaluated
+twice, evidenced, and destroyed.
+
+| | |
+| --- | --- |
+| Harness | `northstar_agent-M5tgP8KEdv` — `litellm_proxy/deepseek-flash`, idle timeout 60 s, max_tokens 4096 |
+| Gateway | `northstar-tools-gw-bag5vgkiai`, policy engine `ENFORCE` |
+| Policy engine | `northstar_agent_policies-r5bn3ua5af` — `permit_northstar_tools` + `forbid_credit_over_cap` |
+| Policy tests | **7/7** — $51/$75 denied at the gateway; two $40 credits allowed ($80, the required hole) |
+| Final evaluation | **`eval-1` 6/6, `eval-2` 6/6**, escalation present as an `escalate_to_human` tool call for TC-003 and TC-005 in both |
+| Evidence | `agent_eval.csv`, `agent-traces.jsonl`, `agent-cost.csv`, `policy-tests.json`, `agentcore-config.json`, `track-c-failures.md`, `todo1-first-apply-error.md` |
+| Collector | **33 OK, 0 WARN, 0 FAIL** (`docs/lab3-evidence/collect-output.txt`) |
+| Notebook | `notebooks/lab3-demo.ipynb`, 10 code cells, execution counts 1-10, no errors |
+| Design doc | `docs/lab3-model-design.md` §1-§4 written (1,110 body words) |
+| Cost | $0.1496 for all six evaluation passes; Track C needs **no NAT resume** |
+
+**Findings that cost time and are now in `AGENTS.md`:** the LiteLLM model ID
+needs a provider prefix (`litellm_proxy/deepseek-flash`); the gateway role needs
+three policy-engine actions, not one; `max_tokens=1024` is too small for a
+reasoning model and an unguarded stream iteration loses the whole suite; a
+required `customer_id` blocked `escalate_to_human`; and temporal policies cannot
+be driven through a harness today (no policy-session field in `InvokeHarness`).
+
+**One thing deliberately not done:** the split-credit hole is documented, not
+closed — see `track-c-failures.md` §1 for why a per-call predicate cannot close
+it and why the harness cannot supply the policy-session header a temporal policy
+needs.
+
 
 Phases 0-2 are committed (`ba6ae22`, `a3bff0c`, `e4d1a12`, `9b5b663`, `ac40d45`).
 
@@ -58,11 +90,10 @@ Also useful: the agent's long-term memory has a "Lab 3 Track C — model + key s
 | 2 — Create the SageMaker MLflow **App** | ✅ **DONE** (2026-10-16) |
 | 3 — Implement Track A (4 TODO areas in `churn_training_skeleton.py`) | ✅ **DONE** (2026-10-16) |
 | 4 — Graded training run + `docs/lab3-evaluation-report.md` | ✅ **DONE** (2026-10-16) |
-| 5 — Track C Terraform (3 `TODO (student)` items) + deploy | ⬜ **NEXT** |
-| 5 — Track C Terraform (3 `TODO (student)` items) + deploy | ⬜ |
-| 6 — Track C evaluation, policy tests, failure analysis | ⬜ |
-| 7 — Design doc prose + `notebooks/lab3-demo.ipynb` | ⬜ |
-| 8 — Collect evidence, teardown, tag `lab3-submit` | ⬜ |
+| 5 — Track C Terraform (3 `TODO (student)` items) + deploy | ✅ **DONE** (2026-10-17) |
+| 6 — Track C evaluation, policy tests, failure analysis | ✅ **DONE** (2026-10-17) |
+| 7 — Design doc prose + `notebooks/lab3-demo.ipynb` | ✅ **DONE** (2026-10-17) |
+| 8 — Collect evidence, teardown, tag `lab3-submit` | ✅ **DONE** (2026-10-17) |
 
 Verified in Phase 0, all against the live account:
 
@@ -70,7 +101,7 @@ Verified in Phase 0, all against the live account:
 - AWS CLI 2.36.49, Terraform 1.16.5, uv 0.11.9; `uv sync` clean (184 pkgs)
 - `docs/bedrock-access-verification.txt` present, both checks PASS (Task 4 item satisfied)
 - `infrastructure/environments/dev`: initialized, **0 managed resources**, plan = **39 to add, 0 to change, 0 to destroy**
-- `infrastructure/environments/agent`: plan = **15 to add, 0 change, 0 destroy**, 0 errors, model block points at `deepseek-flash`
+- `infrastructure/environments/agent`: plan = **15 to add, 0 change, 0 destroy**, 0 errors, model block points at `litellm_proxy/deepseek-flash`
 - `docs/lab3-model-design.md` written with the track declaration
 - No secrets in the repo; secret scan clean
 
@@ -237,6 +268,10 @@ training script deduplicates with `ROW_NUMBER()` — see plan §Phase 3a.
 ---
 
 ## 5. What comes after Phase 1 (short version)
+
+> **All of this is complete as of 2026-10-17.** The section is kept as the record
+> of the sequence, not as pending work. Current state is in the update block at
+> the top of this file.
 
 - **Phase 2** — create the MLflow **App** (free) with the `MLEngineer` role and an
   `artifacts/mlflow/` store. Poll until `Status: Created` (~5 min). Save the ARN.

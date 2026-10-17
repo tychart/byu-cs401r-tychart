@@ -191,8 +191,39 @@ See `docs/lab3-plan.md` Phase 5 for the verified details.
 The five tools live in `agent/tools.py` and are exposed through the AgentCore
 Gateway with Cedar policy enforced in `ENFORCE` mode. `agent/harness_client.py`
 writes `docs/lab3-evidence/agent-traces.jsonl` and `agent-cost.csv` on every
-call; `evaluation_harness.LocalAgentEvaluator` drives the six scenarios and
-writes `docs/lab3-evidence/agent_eval.csv`.
+call; `evaluation_harness.LocalAgentEvaluator` drives the six scenarios.
+
+**The LiteLLM model ID needs a provider prefix.** Terraform takes
+`litellm_proxy/deepseek-flash`, not the bare `deepseek-flash` that
+`GET /v1/models` returns. The harness calls `litellm.completion()` internally and
+LiteLLM refuses to guess a provider, so a bare ID fails on the **first
+invocation** (`LLM Provider NOT provided`), not at apply time. `openai/<model>`
+is the equivalent prefix for a plain OpenAI-compatible endpoint.
+
+```bash
+# Repeatable evaluation: 5 required scenarios + the bonus injection case,
+# each in its own runtime session, twice. Appends to the evidence CSV.
+uv run python scripts/run_agent_eval.py            # --runs eval-1 eval-2
+
+# The end-to-end demo. Run it from jupyter (Kernel -> Restart & Run All) and
+# commit it WITH outputs; the TA cannot re-run it.
+uv run jupyter lab notebooks/lab3-demo.ipynb
+```
+
+Track C artifacts:
+
+| Path | Contents |
+| --- | --- |
+| `docs/lab3-evidence/agent_eval.csv` | one row per scenario per run, with pass/fail and tool calls |
+| `docs/lab3-evidence/agent-traces.jsonl` | one JSON object per tool call (`session_id`, `tool`, `input`, `output`, `latency_ms`) |
+| `docs/lab3-evidence/agent-cost.csv` | tokens and estimated cost per run |
+| `docs/lab3-evidence/policy-tests.json` | the gateway's allow/deny for seven direct calls, including two over-cap credits |
+| `docs/lab3-evidence/track-c-failures.md` | failure modes with fixes, including the split-credit hole |
+| `docs/lab3-evidence/agentcore-config.json` | harness, gateway, targets and every Cedar policy, as AWS recorded them |
+
+The AgentCore stack tears down with `bash scripts/teardown-lab3.sh` (the harness
+alone takes ~5 minutes). Run the evidence collector **before** teardown: the
+harness, gateway and policies no longer exist afterwards.
 
 ### Cost control between work sessions
 

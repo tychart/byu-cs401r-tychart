@@ -92,12 +92,21 @@ variable "bedrock_model_profile_prefix" {
 
 variable "litellm_model_id" {
   description = <<-EOT
-    Model name exactly as your LiteLLM proxy knows it -- the "id" field from
-    GET <litellm_api_base>/models. The harness sends it verbatim as the
-    "model" field, so an alias mismatch is a 400 from the proxy.
+    Model identifier in LiteLLM's provider-prefixed form, NOT the bare ID from
+    GET <api_base>/models. The harness calls litellm.completion() internally, and
+    litellm refuses to guess a provider:
+
+      "deepseek-flash"                       -> litellm.BadRequestError:
+                                                LLM Provider NOT provided
+      "litellm_proxy/deepseek-flash"         -> correct when api_base is itself a
+                                                LiteLLM proxy (this stack)
+      "openai/<model>"                       -> equivalent for a plain
+                                                OpenAI-compatible gateway
+
+    Verified against the deployed harness on 2026-10-17; see AGENTS.md.
   EOT
   type        = string
-  default     = "deepseek-flash"
+  default     = "litellm_proxy/deepseek-flash"
 }
 
 variable "litellm_api_base" {
