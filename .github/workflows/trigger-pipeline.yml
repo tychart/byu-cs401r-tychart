@@ -1,0 +1,50 @@
+name: Trigger NorthStar pipeline
+
+# Change detection for the Lab 4 pipeline.
+#
+# CodePipeline's CodeConnections webhook did not deliver pushes on this account:
+# the V2 trigger was configured, the connection read AVAILABLE, and manual
+# executions downloaded the same repository, but no WebhookV2 execution appeared
+# after a push. This workflow makes the "push to main starts the pipeline"
+# contract explicit and observable instead of depending on that webhook.
+#
+# No AWS credential is stored here. The job assumes an IAM role through GitHub's
+# OIDC provider; the role's trust policy accepts only this repository's main
+# branch (see GitHubActionsTriggerRole in pipeline.yaml).
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write   # required to request the OIDC token
+  contents: read
+
+concurrency:
+  group: northstar-pipeline-trigger
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assume the trigger role (GitHub OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::345594594463:role/northstar-github-actions-trigger
+          aws-region: us-east-1
+          role-session-name: github-${{ github.run_id }}
+
+      - name: Start CodePipeline
+        run: |
+          set -euo pipefail
+          ID=$(aws codepipeline start-pipeline-execution \
+                 --name northstar-pipeline \
+                 --query 'pipelineExecutionId' --output text)
+          echo "Started CodePipeline execution ${ID}"
+          {
+            echo "### NorthStar CodePipeline"
+            echo ""
+            echo "- execution: \`${ID}\`"
+            echo "- commit: \`${GITHUB_SHA}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

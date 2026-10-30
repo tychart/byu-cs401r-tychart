@@ -319,6 +319,39 @@ Resources:
             Action: sns:Publish
             Resource: !Ref ModelApprovalTopic
 
+  # ── GitHub Actions -> CodePipeline trigger ────────────────────────────────
+  # CodeConnections' GitHub webhook did not deliver pushes on this account: the
+  # pipeline's V2 trigger was configured, the connection reads AVAILABLE, and
+  # manual runs download the repo, but six minutes after a push no WebhookV2
+  # execution appeared. The repository's GitHub Actions workflow calls
+  # StartPipelineExecution instead, over OIDC -- no access key is stored in
+  # GitHub, and this trust policy accepts only the repository's main branch.
+  GitHubActionsTriggerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-github-actions-trigger"
+      Description: Lets the repo's GitHub Actions workflow start the NorthStar pipeline via OIDC
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Sub "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com"
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubOwner}/${GitHubRepo}:ref:refs/heads/${GitHubBranch}"
+      Policies:
+        - PolicyName: StartNorthStarPipeline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: codepipeline:StartPipelineExecution
+                Resource: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${ProjectName}-pipeline"
+
   # ── Build-failure alarm ─────────────────────────────────────────────────────
   # Task 2 requires that a failed gate does not just halt the build but tells
   # somebody. Nothing wired this until 2026-08-04.
@@ -370,6 +403,13 @@ Resources:
     Properties:
       Name: !Sub "${ProjectName}-pipeline"
       RoleArn: !GetAtt CodePipelineRole.Arn
+      PipelineType: V2
+      # Change detection does NOT come from the CodeConnections webhook on this
+      # account. The V2 trigger was configured, the connection reads AVAILABLE,
+      # and manual runs download the same repo, but six minutes after a push no
+      # WebhookV2 execution appeared. .github/workflows/trigger-pipeline.yml
+      # starts the pipeline over GitHub OIDC instead, so push -> pipeline does
+      # not depend on an invisible webhook. See GitHubActionsTriggerRole below.
       ArtifactStore:
         Type: S3
         Location: !Ref ArtifactsBucket
@@ -390,7 +430,6 @@ Resources:
                 FullRepositoryId: !Sub "${GitHubOwner}/${GitHubRepo}"
                 BranchName: !Ref GitHubBranch
                 OutputArtifactFormat: CODE_ZIP
-                DetectChanges: true
               OutputArtifacts:
                 - Name: SourceArtifact
 
@@ -472,3 +511,11 @@ Outputs:
         aws sns subscribe --topic-arn <arn> --protocol email --notification-endpoint you@example.com
     Export:
       Name: !Sub "${ProjectName}-model-approvals-topic"
+
+  GitHubActionsRoleArn:
+    Value: !GetAtt GitHubActionsTriggerRole.Arn
+    Description: >-
+      Role assumed by .github/workflows/trigger-pipeline.yml over GitHub OIDC.
+      If the repository moves accounts, update the role ARN in that workflow.
+    Export:
+      Name: !Sub "${ProjectName}-github-actions-role"
