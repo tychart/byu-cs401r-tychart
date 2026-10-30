@@ -4,7 +4,7 @@ Guidance for AI coding agents working in this repository. Read this before your
 first command. It is deliberately short on narrative and long on the things that
 have actually cost time or money here.
 
-**Last updated: 2026-10-17 (Lab 3 complete, tagged `lab3-submit`).**
+**Last updated: 2026-10-30 (Lab 4 prerequisites complete, CI stack up).**
 
 > ## Maintenance directive
 >
@@ -24,8 +24,10 @@ have actually cost time or money here.
 
 Coursework for **CS 401R** (BYU), a fictional retailer "NorthStar" whose ML
 platform is built across seven labs. One repository for all labs; each lab extends
-the last. **Do not create a new repo per lab.** Current position: **Lab 3 complete**
-(tag `lab3-submit`, 2026-10-17) — Track A and Track C both graded-ready; Lab 4 next.
+the last. **Do not create a new repo per lab.** Current position: **Lab 4 in progress** —
+all six prerequisites are done and the CI stack (`northstar-cicd`) is up; the first
+pipeline run stops at `pre_build` until Task 1's `data/feature_engineering.py` and
+`tests/test_fairness.py` exist. Lab 3 is tagged `lab3-submit` and unchanged.
 
 ```
 raw/customers/  ──crawler──▶  Glue catalog  ──transform──▶  processed/  ──features──▶  features/  ──▶  SageMaker Feature Store
@@ -166,6 +168,8 @@ Measured idle costs:
 | AgentCore harness session | ~$0.003/session | memory is billed per session, so keep `idle_session_timeout_seconds = 60` |
 | Glue job run | $0.44/DPU-hr (2 DPU min) | ~$0.03–0.10 per pipeline run |
 | Athena | $5/TB scanned | a 10k-row query is <$0.001 |
+| CodeBuild `BUILD_GENERAL1_MEDIUM` | ~$0.005/min | a full run is ~3-5 min |
+| Training job, `ml.g6.2xlarge` spot | ~$0.45/hr billed | measured 59-69 s billable ≈ $0.01/run |
 
 **Pause tooling — use it, don't improvise:**
 
@@ -351,8 +355,49 @@ clean-looking report that had verified nothing. Keep that behaviour.
 
 ---
 
-## 7. Data-engineering invariants
+## 6b. Lab 4 CI/CD pipeline (2026-10-30)
 
+- **Applied spot training quota is 0, not 4.** `get-service-quota L-29688C85`
+  returns 0 while `get-aws-default-service-quota` returns 4; every CPU training
+  type is 0. The GPU families are the only ones with quota (1 spot instance
+  each). A quota-increase request is `CASE_OPENED`. Do not assume the handout's
+  "spot defaults to 4".
+- **`scripts/run_sagemaker_pipeline.sh` is the training ladder.** It tries
+  `ml.m5.large` first (so the cheap type takes over when quota lands), then GPU
+  types, and falls through only on a quota/capacity failure. A 0-quota failure
+  happens inside `CreateTrainingJob`, so **no training job exists** — inspect the
+  *step* `FailureReason`, not a training job. Verified live: m5 quota failure →
+  g6.2xlarge trained + registered (v4-v6); g5.xlarge ICE → stopped after 60 s →
+  g6.2xlarge.
+- **S3A writes a bucket-root `features_$folder$` marker.** Re-running the feature
+  job failed with `AccessDenied` on `s3://.../features_$folder$` after computing
+  every feature (old data survives; the write aborts first). The DataEngineer
+  policy now grants exactly `processed_$folder$`/`features_$folder$`; the
+  prefix-scoped grants still exclude everything else.
+- **CodeConnections' GitHub webhook does not deliver pushes on this account.**
+  V2 `Triggers` was configured and echoed by `get-pipeline`, the connection reads
+  AVAILABLE, manual runs download the repo — but two pushes produced zero
+  executions. Change detection is `.github/workflows/trigger-pipeline.yml` →
+  `StartPipelineExecution` over GitHub OIDC (role `northstar-github-actions-trigger`
+  in `pipeline.yaml`, no stored keys).
+- **GitHub OIDC `sub` is immutable for repos created after 2026-07-15:**
+  `repo:owner@<id>/repo@<id>:ref:refs/heads/main`. A name-only trust policy fails
+  with `Not authorized to perform sts:AssumeRoleWithWebIdentity`. Accept both
+  patterns.
+- **The CloudFormation `Triggers` property is `ProviderType`, not `Provider`.**
+  The wrong key fails changeset creation with only
+  `AWS::EarlyValidation::PropertyValidation` and no detail.
+- **A colon-space in an unquoted buildspec `echo` breaks the whole buildspec**
+  (`YAML_FILE_ERROR` at `DOWNLOAD_SOURCE`, which looks like a source problem).
+- **`pytest` is not in the repo venv** (CI installs it from `requirements.txt`):
+  `uv pip install pytest` before running locally.
+- **Position:** stack `northstar-cicd` is up. Runs currently fail at `pre_build`
+  on `tests/test_features.py` (`ModuleNotFoundError: data.feature_engineering`) by
+  design until Task 1 lands, which leaves the build-failure alarm in `ALARM` —
+  get a green build before demonstrating the failure path so it can be seen
+  returning to `OK`.
+
+## 7. Data-engineering invariants
 - **The temporal split is not the train/test split.** Every feature is computed from
   purchases **≤ T** (`T = 2026-04-01`); `churn_label` comes only from the outcome
   window `(T, 2026-06-30]`. Anything derived from post-`T` data is leakage.
