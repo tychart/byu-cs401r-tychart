@@ -167,7 +167,7 @@ phases:
       # in TRAINING_INSTANCE_TYPES in order, falling through ONLY on a quota or
       # spot-capacity failure. A real training error aborts instead of being
       # masked by a retry on a different instance type.
-      - echo "Starting SageMaker Pipeline execution (instance ladder: ${TRAINING_INSTANCE_TYPES})..."
+      - echo "Starting SageMaker Pipeline execution with ladder ${TRAINING_INSTANCE_TYPES}..."
       - bash scripts/run_sagemaker_pipeline.sh
 
       # ── Model quality gate ─────────────────────────────────────────────
