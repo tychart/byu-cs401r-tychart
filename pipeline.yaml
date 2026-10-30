@@ -342,7 +342,17 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
               StringLike:
-                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubOwner}/${GitHubRepo}:ref:refs/heads/${GitHubBranch}"
+                # Two formats on purpose. Repositories created after 2026-07-15
+                # (this one) get GitHub's immutable subject claim, which embeds
+                # the numeric owner and repository IDs:
+                #   repo:tychart@123456/byu-cs401r-tychart@789012:ref:refs/heads/main
+                # The older name-only form is kept so the trust does not break
+                # if the repository is ever recreated from an older namespace.
+                # A name-only pattern here fails with
+                # "Not authorized to perform sts:AssumeRoleWithWebIdentity".
+                token.actions.githubusercontent.com:sub:
+                  - !Sub "repo:${GitHubOwner}/${GitHubRepo}:ref:refs/heads/${GitHubBranch}"
+                  - !Sub "repo:${GitHubOwner}@*/${GitHubRepo}@*:ref:refs/heads/${GitHubBranch}"
       Policies:
         - PolicyName: StartNorthStarPipeline
           PolicyDocument:
