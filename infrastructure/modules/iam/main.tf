@@ -47,8 +47,30 @@ data "aws_iam_policy_document" "ml_engineer" {
       # that Lab 3's training script creates out-of-band. Absent here it fails with
       # AccessDenied on the first pipeline run.
       "sagemaker:CreateModelPackageGroup", "sagemaker:DescribeModelPackageGroup",
+      # Lab 4: a SageMaker Pipeline tags every job it creates, and the pipeline
+      # execution runs as this role. Absent these, CreateTrainingJob fails with
+      # AccessDenied on the tag call, before the container starts.
+      "sagemaker:AddTags", "sagemaker:ListTags",
     ]
     resources = ["*"]
+  }
+
+  # Lab 4 prerequisite 4. The SageMaker Pipeline runs AS MLEngineer and starts a
+  # TrainingStep that is handed the same role -- that hand-off is an
+  # iam:PassRole call. Labs 1-3 never needed it because training was started by
+  # the student's own credentials. Without this, every pipeline run dies about
+  # 30 seconds in with "... is not authorized to perform: iam:PassRole".
+  statement {
+    sid       = "PassSelfToSageMaker"
+    effect    = "Allow"
+    actions   = ["iam:PassRole"]
+    resources = [aws_iam_role.ml_engineer.arn]
+
+    condition {
+      test     = "StringEquals"
+      variable = "iam:PassedToService"
+      values   = ["sagemaker.amazonaws.com"]
+    }
   }
 
   # Studio runs as this role. Opening Studio calls DescribeDomain, ListApps and
@@ -215,6 +237,24 @@ data "aws_iam_policy_document" "data_engineer" {
       "arn:aws:s3:::${var.project}-${var.environment}-data-*/raw/*",
       "arn:aws:s3:::${var.project}-${var.environment}-data-*/processed/*",
       "arn:aws:s3:::${var.project}-${var.environment}-data-*/features/*",
+    ]
+  }
+
+  # Hadoop's S3A committer materialises a directory marker named
+  # `<prefix>_$folder$` at the BUCKET ROOT when it creates a top-level output
+  # prefix. The prefix-scoped grants above deliberately do not cover bucket-root
+  # keys, so re-running the feature job failed with
+  #   not authorized to perform: s3:PutObject on resource: ".../features_$folder$"
+  # after it had computed every feature — the AccessDenied arrived two minutes
+  # in, and the job wrote nothing. This grants exactly those two marker keys and
+  # nothing else: no object under raw/, processed/ or features/ changes hands.
+  statement {
+    sid       = "S3TopLevelDirectoryMarkers"
+    effect    = "Allow"
+    actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+    resources = [
+      "arn:aws:s3:::${var.project}-${var.environment}-data-*/processed_$folder$",
+      "arn:aws:s3:::${var.project}-${var.environment}-data-*/features_$folder$",
     ]
   }
 
