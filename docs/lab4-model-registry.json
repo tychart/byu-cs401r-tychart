@@ -2,11 +2,20 @@
     "ModelPackageSummaryList": [
         {
             "ModelPackageGroupName": "northstar-churn-models",
+            "ModelPackageVersion": 9,
+            "ModelPackageArn": "arn:aws:sagemaker:us-east-1:345594594463:model-package/northstar-churn-models/9",
+            "CreationTime": "2026-10-31T15:43:05.878000-06:00",
+            "ModelPackageStatus": "Completed",
+            "ModelApprovalStatus": "Approved",
+            "ModelPackageRegistrationType": "Registered"
+        },
+        {
+            "ModelPackageGroupName": "northstar-churn-models",
             "ModelPackageVersion": 8,
             "ModelPackageArn": "arn:aws:sagemaker:us-east-1:345594594463:model-package/northstar-churn-models/8",
             "CreationTime": "2026-10-31T13:46:00.793000-06:00",
             "ModelPackageStatus": "Completed",
-            "ModelApprovalStatus": "PendingManualApproval",
+            "ModelApprovalStatus": "Approved",
             "ModelPackageRegistrationType": "Registered"
         },
         {

@@ -1,0 +1,116 @@
+
+===== BEFORE  (2026-10-31T21:34:11Z) =====
+--- newest CodeBuild build: id, commit, status, then phases
+northstar-ci:58a8838b-ea63-4dba-826e-63a8d86d3f68	929d388e3292f84a278d436d2ee3f13e0a21b9b0	SUCCEEDED
+SUBMITTED	SUCCEEDED
+QUEUED	SUCCEEDED
+PROVISIONING	SUCCEEDED
+DOWNLOAD_SOURCE	SUCCEEDED
+INSTALL	SUCCEEDED
+PRE_BUILD	SUCCEEDED
+BUILD	SUCCEEDED
+POST_BUILD	SUCCEEDED
+UPLOAD_ARTIFACTS	SUCCEEDED
+FINALIZING	SUCCEEDED
+COMPLETED	None
+--- newest 3 model packages
+8	Approved	2026-10-31T13:46:00.793000-06:00
+7	Approved	2026-10-31T00:05:34.950000-06:00
+6	PendingManualApproval	2026-10-30T01:39:46.967000-06:00
+--- alarm state
+OK	2026-10-31T00:24:45.613000-06:00
+--- alarm action history
+2026-10-31T00:24:45.664000-06:00	Successfully executed action arn:aws:sns:us-east-1:345594594463:northstar-model-approvals
+2026-10-31T00:09:45.663000-06:00	Successfully executed action arn:aws:sns:us-east-1:345594594463:northstar-model-approvals
+2026-10-30T02:23:45.671000-06:00	Successfully executed action arn:aws:sns:us-east-1:345594594463:northstar-model-approvals
+2026-10-30T02:06:45.658000-06:00	Successfully executed action arn:aws:sns:us-east-1:345594594463:northstar-model-approvals
+2026-10-30T02:01:45.675000-06:00	Successfully executed action arn:aws:sns:us-east-1:345594594463:northstar-model-approvals
+--- SNS subscriptions (an ARN, not PendingConfirmation)
+email	arn:aws:sns:us-east-1:345594594463:northstar-model-approvals:54777f73-71c4-4c73-a0e6-a4c3898003e4
+--- pipeline executions (newest 3)
+Succeeded	929d388e3292f84a278d436d2ee3f13e0a21b9b0	1f8460f5-c0a8-4823-ad76-0f1ce9ce918d
+Failed	35d60125123a36c82f5dbc1c69b216e26f2c587d	876218df-dbec-4734-9c8b-b0a0da79448d
+Failed	5e5458dd0ee27acf3d64ef15433821e150085763	960d3773-3413-433f-88e8-e2038f8c0833
+--- SageMaker pipeline executions (newest 3)
+2026-10-31T13:42:49.419000-06:00	Succeeded	codebuild-929d388e-large-194248
+2026-10-31T00:01:20.567000-06:00	Succeeded	codebuild-m5-quota-check-large-060119
+2026-10-30T01:37:43.083000-06:00	Succeeded	codebuild-ice-test-2xlarge-073741
+
+===== AFTER FAILED RUN  (2026-10-31T21:37:58Z) =====
+--- newest CodeBuild build: id, commit, status, then phases
+northstar-ci:b050a7e0-1fdd-4ce9-b9cc-4b82c20fcb24	037a9470d4d16124c0762bbfcadcd0688989b681	FAILED
+SUBMITTED	SUCCEEDED
+QUEUED	SUCCEEDED
+PROVISIONING	SUCCEEDED
+DOWNLOAD_SOURCE	SUCCEEDED
+INSTALL	SUCCEEDED
+PRE_BUILD	FAILED
+FINALIZING	SUCCEEDED
+COMPLETED	None
+--- newest 3 model packages
+8	Approved	2026-10-31T13:46:00.793000-06:00
+7	Approved	2026-10-31T00:05:34.950000-06:00
+6	PendingManualApproval	2026-10-30T01:39:46.967000-06:00
+--- alarm state
+ALARM	2026-10-31T15:37:35.080000-06:00
+--- alarm action history
+2026-10-31T15:37:35.124000-06:00	Successfully executed action arn:aws:sns:us-east-1:345594594463:northstar-model-approvals
+2026-10-31T00:24:45.664000-06:00	Successfully executed action arn:aws:sns:us-east-1:345594594463:northstar-model-approvals
+2026-10-31T00:09:45.663000-06:00	Successfully executed action arn:aws:sns:us-east-1:345594594463:northstar-model-approvals
+2026-10-30T02:23:45.671000-06:00	Successfully executed action arn:aws:sns:us-east-1:345594594463:northstar-model-approvals
+2026-10-30T02:06:45.658000-06:00	Successfully executed action arn:aws:sns:us-east-1:345594594463:northstar-model-approvals
+--- SNS subscriptions (an ARN, not PendingConfirmation)
+email	arn:aws:sns:us-east-1:345594594463:northstar-model-approvals:54777f73-71c4-4c73-a0e6-a4c3898003e4
+--- pipeline executions (newest 3)
+Failed	037a9470d4d16124c0762bbfcadcd0688989b681	7c4d8424-6330-4460-8600-93ba1e4be23a
+Succeeded	929d388e3292f84a278d436d2ee3f13e0a21b9b0	1f8460f5-c0a8-4823-ad76-0f1ce9ce918d
+Failed	35d60125123a36c82f5dbc1c69b216e26f2c587d	876218df-dbec-4734-9c8b-b0a0da79448d
+--- SageMaker pipeline executions (newest 3)
+2026-10-31T13:42:49.419000-06:00	Succeeded	codebuild-929d388e-large-194248
+2026-10-31T00:01:20.567000-06:00	Succeeded	codebuild-m5-quota-check-large-060119
+2026-10-30T01:37:43.083000-06:00	Succeeded	codebuild-ice-test-2xlarge-073741
+
+===== AFTER REVERT  (2026-10-31T21:44:39Z) =====
+--- newest CodeBuild build: id, commit, status, then phases
+northstar-ci:3580a032-eb68-48b2-adaa-79b02a45e6e0	2bede516007b6e98e452f3e48f76a35332f7917a	SUCCEEDED
+SUBMITTED	SUCCEEDED
+QUEUED	SUCCEEDED
+PROVISIONING	SUCCEEDED
+DOWNLOAD_SOURCE	SUCCEEDED
+INSTALL	SUCCEEDED
+PRE_BUILD	SUCCEEDED
+BUILD	SUCCEEDED
+POST_BUILD	SUCCEEDED
+UPLOAD_ARTIFACTS	SUCCEEDED
+FINALIZING	SUCCEEDED
+COMPLETED	None
+--- newest 3 model packages
+9	PendingManualApproval	2026-10-31T15:43:05.878000-06:00
+8	Approved	2026-10-31T13:46:00.793000-06:00
+7	Approved	2026-10-31T00:05:34.950000-06:00
+--- alarm state
+OK	2026-10-31T15:44:35.075000-06:00
+--- alarm action history
+2026-10-31T15:44:35.106000-06:00	Successfully executed action arn:aws:sns:us-east-1:345594594463:northstar-model-approvals
+2026-10-31T15:37:35.124000-06:00	Successfully executed action arn:aws:sns:us-east-1:345594594463:northstar-model-approvals
+2026-10-31T00:24:45.664000-06:00	Successfully executed action arn:aws:sns:us-east-1:345594594463:northstar-model-approvals
+2026-10-31T00:09:45.663000-06:00	Successfully executed action arn:aws:sns:us-east-1:345594594463:northstar-model-approvals
+2026-10-30T02:23:45.671000-06:00	Successfully executed action arn:aws:sns:us-east-1:345594594463:northstar-model-approvals
+--- SNS subscriptions (an ARN, not PendingConfirmation)
+email	arn:aws:sns:us-east-1:345594594463:northstar-model-approvals:54777f73-71c4-4c73-a0e6-a4c3898003e4
+--- pipeline executions (newest 3)
+InProgress	2bede516007b6e98e452f3e48f76a35332f7917a	94a15c7d-ee2a-4ea8-8588-bb55e4283b57
+Failed	037a9470d4d16124c0762bbfcadcd0688989b681	7c4d8424-6330-4460-8600-93ba1e4be23a
+Succeeded	929d388e3292f84a278d436d2ee3f13e0a21b9b0	1f8460f5-c0a8-4823-ad76-0f1ce9ce918d
+--- SageMaker pipeline executions (newest 3)
+2026-10-31T15:39:59.593000-06:00	Succeeded	codebuild-2bede516-large-213958
+2026-10-31T13:42:49.419000-06:00	Succeeded	codebuild-929d388e-large-194248
+2026-10-31T00:01:20.567000-06:00	Succeeded	codebuild-m5-quota-check-large-060119
+
+===== NOTE (added 2026-10-31T21:47Z, after the three snapshots above) =====
+The AFTER REVERT snapshot records pipeline execution 94a15c7d as InProgress because
+the ManualApproval stage was still waiting for a human at that moment -- that is the
+designed behaviour of a deployment gate, not a hang. The promotion decision was then
+recorded: model package v9 -> Approved and codepipeline put-approval-result on
+ManualApproval/ReviewModelMetrics, after which the execution reads Succeeded.
+  execution now: Succeeded	2bede516007b6e98e452f3e48f76a35332f7917a	94a15c7d-ee2a-4ea8-8588-bb55e4283b57
