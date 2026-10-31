@@ -482,27 +482,3 @@ class TestConsistency:
             f"Only {survival:.1%} of raw rows survived to processed. Expected "
             f"85-100%; the transform should remove only null-key and duplicate rows."
         )
-
-
-# ── Deliberate CI-gate demonstration ─────────────────────────────────────────
-
-class TestDeliberateFailure:
-    """TEMPORARY. Removed by the commit immediately after this one.
-
-    This exists to demonstrate, on the record, that the pipeline halts on a
-    failing test and that the failure notifies somebody. It lives in
-    `test_data.py` rather than its own file because `buildspec.yml` invokes the
-    four test modules by name, so a new file would never run and the build would
-    go green -- a demonstration that demonstrated nothing.
-
-    The assertion is a plausible-but-wrong gate (a 90% churn rate) rather than
-    `assert False`, so the build log reads like a real gate failure.
-    """
-
-    def test_deliberate_failure_for_failure_demo(self, features_df):
-        observed = float(features_df["churn_label"].mean())
-        assert observed > 0.90, (
-            f"DELIBERATE FAILURE for the Lab 4 Task 2 demo: churn rate is "
-            f"{observed:.1%}, below the 90% gate applied for this commit. This "
-            f"assertion is removed by the following commit."
-        )
