@@ -78,20 +78,31 @@ fresh deploy from the template would fail `pre_build` on the data-bucket copy.
    Verified again on 2026-10-31: `929d388` started execution
    `1f8460f5-c0a8-4823-ad76-0f1ce9ce918d` within seconds.
 
-## Next steps
+## Next steps — only the finish sequence is left
 
-1. **Task 4**: `## DataOps Maturity` and `## MLOps Maturity` in
-   `docs/lab4-xops-assessment.md` (~400 words, Level 0-4 each, with
-   `Current level` / `Evidence` / `Gap to Level N+1` / `Top priority investment`).
-   **The doc already forward-references the MLOps section** in
-   `## Champion-Challenger`, so it must exist before the tag.
-2. Commit, then **delete the CI stack before the final docs push** (a docs-only
-   push starts another training run and registers v10).
-3. `aws cloudformation delete-stack --stack-name northstar-cicd`, empty and delete
-   the versioned artifacts bucket, delete the `/aws/codebuild/northstar-ci` log group.
-4. Set the `Approved` packages to `Rejected` before the data bucket goes.
-5. Tag `lab4-submit`, push the tag (`git push origin lab4-submit`).
-6. Re-run the feature job before any later push after `2026-11-01 06:40Z`.
+All four tasks are written and committed. Nothing on `main` after `d924e25` has
+been pushed; `origin/main` is at `2bede51` (the revert), which is what the tag
+will contain once the docs commits are pushed.
+
+1. **Delete the CI stack before the final docs push** — a docs-only push starts
+   another training run and registers v10, which would also make
+   `docs/lab4-model-registry.json` stale.
+   `aws cloudformation delete-stack --stack-name northstar-cicd`, wait, then empty
+   the versioned artifacts bucket (`northstar-dev-cicd-artifacts-345594594463`) and
+   `aws s3api delete-bucket`, then delete the `/aws/codebuild/northstar-ci` log group.
+2. Push `main`, then `git tag lab4-submit` and `git push origin lab4-submit`.
+   A tag push does not trigger the pipeline (the workflow filters on
+   `branches: [main]`), but the `main` push will show a **red** GitHub Actions run
+   because `northstar-github-actions-trigger` died with the stack. Expected, not a
+   defect.
+3. **Do not set the packages to `Rejected`** unless Lab 2's data bucket is being
+   torn down: the handout's instruction is conditional on the data bucket going
+   away, and we are only pausing it. `docs/lab4-model-registry.json` must keep
+   showing v8 `Approved` for Task 1's rubric.
+4. Lab 2 stays paused (NAT destroyed). No NAT is needed by any Lab 4 phase.
+
+Freshness note: the feature set expires **2026-11-01 06:40Z**. That only matters
+for future pushes; shipping does not re-run the tests.
 
 ## Useful commands
 

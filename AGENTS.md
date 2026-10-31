@@ -407,7 +407,7 @@ clean-looking report that had verified nothing. Keep that behaviour.
   Re-deploying the stack from the template alone would fail `pre_build` with
   `AccessDenied` on the first `aws s3 cp`. Add the data-bucket statement before
   trusting a fresh deploy.
-- **Position (2026-10-31): Tasks 1 and 2 done, pipeline watched green twice.**
+- **Position (2026-10-31): all four tasks written, nothing left but teardown, tag, push.**
   Evidence is regenerated against the **final green run `2bede51`** (build
   `3580a032`): 76 tests, `[pipeline] registered: …/northstar-churn-models/9`.
   Registry: **v7/v8/v9 `Approved`** (v8 was the champion the final green log's
@@ -428,6 +428,16 @@ clean-looking report that had verified nothing. Keep that behaviour.
   `test_model.py`/`test_fairness.py`.** `buildspec.yml` names those four, so a new
   `tests/test_x.py` is never executed and the build goes green — a failure demo
   that demonstrates nothing.
+- **The Task 4 maturity ladder is not in this repo.** `lab_4_oct_31.md` says
+  "the Level 0–4 maturity model from the chapter", and the chapter is external —
+  so `docs/lab4-xops-assessment.md` states the ladder it is assessing against in
+  one line. Do not silently assume a numbering.
+- **Verify cited paths mechanically before tagging.** Task 4's rubric opens every
+  path the assessment cites. Extract backticked tokens from the doc and `test -e`
+  each; eyeballing 30 paths missed nothing here but only because they were checked
+  twice. Watch for extractor artifacts: CloudWatch namespace names
+  (`NorthStar/Model`) and S3 prefixes (`features/`) are not repo paths, and
+  stripping leading dots turns `.github/workflows/x.yml` into a false miss.
 - **The build needs `data/feature_engineering.py`; it existed only from `929d388`.**
   Every build before that failed at `pre_build` on `tests/test_features.py`
   (`ModuleNotFoundError: data.feature_engineering`). That red period is why the
