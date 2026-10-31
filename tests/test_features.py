@@ -153,15 +153,36 @@ class TestRecencyFeatures:
         )
 
     def test_customer_with_no_transactions_returns_sentinel(self, sample_customers):
-        """Customer with no transactions should get a sentinel value (e.g., 999)."""
-        empty_txns = pd.DataFrame(columns=["customer_id", "purchase_date", "order_value"])
+        """Customer with no transactions should get a sentinel value (e.g., 999).
+
+        Boundary case: a `groupby` over transactions cannot produce a row for a
+        customer who never bought anything, so without a roster that customer
+        disappears from the feature set entirely -- and a never-purchased
+        customer is the most lapsed one there is. Recency 0 would encode them as
+        the *most* engaged, which is the worst possible default.
+        """
+        empty_txns = pd.DataFrame(columns=[
+            "transaction_id", "customer_id", "purchase_date", "order_value",
+            "num_items", "payment_method", "channel", "store_id",
+            "product_category",
+        ])
         customer_ids = pd.DataFrame({"customer_id": ["CUST-NODATA"]})
 
-        # TODO: Your function should handle customers with no transactions
-        # Expected behavior: return days_since_last_purchase = 999 (or configurable sentinel)
-        # features = compute_recency_features(empty_txns, SNAPSHOT_DATE, customer_ids)
-        # assert features.iloc[0]["days_since_last_purchase"] == 999
-        pass
+        features = compute_recency_features(empty_txns, SNAPSHOT_DATE, customer_ids)
+
+        assert len(features) == 1, "the roster customer must still get a row"
+        assert features.iloc[0]["customer_id"] == "CUST-NODATA"
+        assert features.iloc[0]["days_since_last_purchase"] == 999
+        assert features.iloc[0]["customer_tenure_days"] == 0
+
+    def test_no_purchase_sentinel_does_not_collide_with_real_recency(
+            self, sample_customers, sample_transactions):
+        """A real customer's recency must never be 999: the sentinel has to be
+        distinguishable from observed data, or zero-purchase customers look
+        like ordinary lapsed ones."""
+        features = compute_recency_features(
+            sample_transactions, SNAPSHOT_DATE, sample_customers)
+        assert (features["days_since_last_purchase"] != 999).all()
 
 
 # ── Frequency Feature Tests ────────────────────────────────────────────────────
@@ -285,9 +306,21 @@ class TestFullFeatureSet:
         assert not missing, f"Missing features: {missing}"
 
     def test_no_null_features_for_known_customers(self, sample_customers, sample_transactions):
-        """
-        TODO: After filling missing values, no feature should be NaN for customers
-        who have at least one transaction. Document your null-filling strategy.
+        """After filling missing values, no feature may be NaN for a customer
+        who has at least one transaction.
+
+        Null-filling strategy: the feature set is built by left-joining the
+        aggregate features onto the customer roster, then filling
+
+          * counts and sums (frequencies, spend, lifetime value, basket size,
+            diversity, channel ratio) with 0.0 -- a customer with no purchases
+            in a window made zero purchases in it; and
+          * `days_since_last_purchase` with 999 -- a customer with no purchases
+            at all is maximally lapsed, and 0 would encode them as maximally
+            engaged.
+
+        The alternative (dropping incomplete rows) is worse here: it silently
+        deletes exactly the customers most likely to churn.
         """
         features = build_churn_feature_set(
             customers=sample_customers,
@@ -298,7 +331,63 @@ class TestFullFeatureSet:
         active_customer_ids = sample_transactions["customer_id"].unique()
         active_features = features[features["customer_id"].isin(active_customer_ids)]
         null_counts = active_features[self.REQUIRED_FEATURES].isna().sum()
-        # TODO: Assert null_counts.sum() == 0 (implement after deciding on null strategy)
+        assert null_counts.sum() == 0, (
+            f"Null features for customers that have transactions: "
+            f"{null_counts[null_counts > 0].to_dict()}"
+        )
+
+    def test_customer_with_zero_transactions_gets_a_row(self, sample_customers):
+        """Boundary case: a roster customer with no purchases must survive
+        build_churn_feature_set with sentinel values, not vanish."""
+        empty_txns = pd.DataFrame(columns=[
+            "customer_id", "purchase_date", "order_value", "num_items",
+            "channel", "product_category",
+        ])
+        roster = pd.DataFrame({"customer_id": ["CUST-10000001"]})
+
+        features = build_churn_feature_set(
+            customers=roster, transactions=empty_txns, snapshot_date=SNAPSHOT_DATE)
+
+        assert len(features) == 1
+        row = features.iloc[0]
+        assert row["days_since_last_purchase"] == 999
+        assert row["purchase_frequency_180d"] == 0
+        assert row["total_lifetime_value"] == 0
+        assert features[self.REQUIRED_FEATURES].isna().sum().sum() == 0
+
+    def test_single_transaction_customer(self, sample_customers):
+        """Edge case: a customer with exactly one purchase.
+
+        One order makes tenure and recency the same number, and the basket-size
+        denominator exactly 1. Off-by-one errors in the window boundaries show
+        up here first.
+        """
+        one_txn = pd.DataFrame([{
+            "transaction_id": "TXN-SINGLE0001",
+            "customer_id": "CUST-10000001",
+            "purchase_date": (SNAPSHOT_DATE - timedelta(days=45)).isoformat(),
+            "order_value": 120.00,
+            "num_items": 3,
+            "payment_method": "credit_card",
+            "channel": "online",
+            "store_id": "ONLINE",
+            "product_category": "Apparel",
+        }])
+
+        features = build_churn_feature_set(
+            customers=sample_customers[sample_customers["customer_id"] == "CUST-10000001"],
+            transactions=one_txn,
+            snapshot_date=SNAPSHOT_DATE,
+        )
+        row = features.iloc[0]
+
+        assert row["days_since_last_purchase"] == 45
+        assert row["customer_tenure_days"] == 45
+        assert row["purchase_frequency_30d"] == 0
+        assert row["purchase_frequency_90d"] == 1
+        assert row["avg_order_value"] == pytest.approx(120.0)
+        assert row["avg_basket_size_6m"] == pytest.approx(3.0)
+        assert row["online_to_store_ratio"] == pytest.approx(1.0)
 
     def test_output_has_customer_id_column(self, sample_customers, sample_transactions):
         features = build_churn_feature_set(

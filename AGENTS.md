@@ -394,6 +394,19 @@ clean-looking report that had verified nothing. Keep that behaviour.
   (`YAML_FILE_ERROR` at `DOWNLOAD_SOURCE`, which looks like a source problem).
 - **`pytest` is not in the repo venv** (CI installs it from `requirements.txt`):
   `uv pip install pytest` before running locally.
+- **The starter kit is fully integrated** (commit `fd47731`, 2026-10-30).
+  `tests/`, `pytest.ini`, `requirements.txt`, `models/churn/{pipeline_definition,train_sagemaker}.py`
+  are byte-identical to `cs401r-lab4-template-main`; `models/churn/churn_model.py` is
+  the filled-in Lab 3 model, and `buildspec.yml`/`pipeline.yaml` are supersets
+  (instance ladder, GitHub OIDC trigger, no `DetectChanges` webhook). If the zip is
+  re-downloaded, diff before copying: overwriting those four files would silently
+  revert the account-specific fixes.
+- **The CodeBuild role has `AmazonS3FullAccess` attached out-of-band.**
+  `pipeline.yaml` grants only the artifacts bucket, yet `pre_build` copies from
+  `northstar-dev-data-*` and worked (verified in the 2026-10-31 build log).
+  Re-deploying the stack from the template alone would fail `pre_build` with
+  `AccessDenied` on the first `aws s3 cp`. Add the data-bucket statement before
+  trusting a fresh deploy.
 - **Position:** stack `northstar-cicd` is up. Runs currently fail at `pre_build`
   on `tests/test_features.py` (`ModuleNotFoundError: data.feature_engineering`) by
   design until Task 1 lands, which leaves the build-failure alarm in `ALARM` —
@@ -401,6 +414,28 @@ clean-looking report that had verified nothing. Keep that behaviour.
   returning to `OK`.
 
 ## 7. Data-engineering invariants
+## 7. Data-engineering invariants
+- **`features/customers/` is overwritten, the Feature Store is appended.** The
+  Glue job writes the parquet with `.mode("overwrite")`, so re-running it
+  replaces the prefix (2 part files, 9,999 rows, measured 2026-10-31) rather than
+  duplicating rows. Only the *offline store table* is append-only and needs the
+  `ROW_NUMBER()` dedupe. Re-running the feature job to refresh `event_time` is
+  therefore safe and does not need a re-ingest of anything.
+- **`data/feature_engineering.py` is a hand-ported pandas copy of the Glue job,
+  and parity is enforced by a test.** `tests/test_data.py::TestTemporalSplit`
+  recomputes the time-sensitive columns from `processed/` and asserts they equal
+  what `features/` contains. Exact for recency/tenure/frequencies; 1e-4 tolerance
+  for the mean-derived columns, because Spark's `F.round` is HALF_UP and pandas'
+  is half-to-even, and about 1.3% of rows sit on an exact 4-decimal tie where the
+  two engines' float accumulation lands on opposite sides. That tie is
+  unresolvable — do not "fix" it by clamping.
+- **A strong leakage control:** recompute recency to `SNAPSHOT` instead of the
+  cutoff and compare. On the 2026-10-30 feature set it changes 9,874 of 9,999
+  customers, and because churners bought nothing in the 90-day holdout their
+  recency shifts by **exactly -90 days** while retainers shift 0.68 days on
+  average. One leaked feature would separate the classes almost perfectly.
+  Feeding full history to `compute_recency_features` does *not* simulate leakage
+  — the function applies the cutoff itself.
 - **The temporal split is not the train/test split.** Every feature is computed from
   purchases **≤ T** (`T = 2026-04-01`); `churn_label` comes only from the outcome
   window `(T, 2026-06-30]`. Anything derived from post-`T` data is leakage.

@@ -286,20 +286,182 @@ class TestFeatures:
             "you anchored to FEATURE_CUTOFF and not to today()"
         )
 
-    # TODO: Add a test proving no feature used post-cutoff data.
-    # Careful: processed/ CONTAINS the holdout purchases (after FEATURE_CUTOFF),
-    # because the label is built from them, so "every customer's max
-    # purchase_date is <= FEATURE_CUTOFF" is false on correct data. Test the
-    # FEATURES instead: recompute the time-sensitive ones (recency, tenure, the
-    # 30/90/180-day frequencies) from processed rows with purchase_date <=
-    # FEATURE_CUTOFF -- your data/feature_engineering.py functions do this --
-    # and assert they equal what the pipeline wrote to features/.
+# ── Temporal split ────────────────────────────────────────────────────────────
 
-    # TODO: Add a freshness test. The pipeline should refuse to train on a
-    # feature set older than 48 hours. event_time is Fractional epoch seconds:
-    # the wall-clock time your Lab 2 feature job ran, NOT the cutoff T.
-    # Consequence: re-run the northstar-dev-feature-engineer Glue job (~90 s)
-    # before any session in which you will push, or this test fails the build.
+class TestTemporalSplit:
+    """Prove the features came from the observation window and nothing else.
+
+    The label is built from the holdout, so `processed/` legitimately contains
+    purchases after FEATURE_CUTOFF. That means "every purchase_date <= T" is
+    FALSE on correct data and is not a usable leakage check. The check has to be
+    on the *features*: recompute the time-sensitive ones from observation-window
+    rows only and assert they equal what the pipeline wrote.
+
+    This is why `data/feature_engineering.py` exists as pandas code rather than
+    only as a Glue job -- the same functions run here, on the same definitions.
+    """
+
+    # Integer-valued: any difference is a real defect, not rounding.
+    EXACT_COLUMNS = [
+        "days_since_last_purchase",
+        "customer_tenure_days",
+        "purchase_frequency_30d",
+        "purchase_frequency_90d",
+        "purchase_frequency_180d",
+    ]
+
+    # 4-decimal rounded by the Glue job. Spark and pandas can land on opposite
+    # sides of an exact tie (x.00005), which shifts the result by exactly 1e-4
+    # on ~1.3% of rows, so these are compared with a tolerance.
+    ROUNDED_COLUMNS = [
+        "avg_order_value", "total_spend_90d", "total_lifetime_value",
+        "avg_basket_size_6m", "category_diversity_score", "online_to_store_ratio",
+    ]
+
+    @staticmethod
+    def _recompute(transactions):
+        from data.feature_engineering import (
+            compute_recency_features, compute_frequency_features,
+            compute_monetary_features, compute_behavioral_features,
+        )
+
+        out = compute_recency_features(transactions, FEATURE_CUTOFF)
+        for part in (
+            compute_frequency_features(transactions, FEATURE_CUTOFF),
+            compute_monetary_features(transactions, FEATURE_CUTOFF),
+            compute_behavioral_features(transactions, FEATURE_CUTOFF),
+        ):
+            out = out.merge(part, on="customer_id", how="outer")
+        return out
+
+    def test_features_match_observation_window_only(self, processed_df, features_df):
+        """No feature used post-cutoff data.
+
+        Recomputing recency, tenure and the 30/90/180-day frequencies from
+        rows dated on or before FEATURE_CUTOFF must reproduce the pipeline's
+        values exactly. If the job had computed them over the full history
+        (which includes the holdout), the recency of every customer who bought
+        after T would be smaller than this recomputation - and those are
+        precisely the customers whose label depends on that purchase.
+        """
+        observation = processed_df[
+            pd.to_datetime(processed_df["purchase_date"]) <= FEATURE_CUTOFF
+        ]
+        recomputed = self._recompute(observation)
+
+        merged = features_df.merge(recomputed, on="customer_id", suffixes=("", "_recomputed"))
+        assert len(merged) == len(features_df), (
+            "recomputation lost customers: "
+            f"{len(features_df)} in features/, {len(merged)} after the join"
+        )
+
+        for column in self.EXACT_COLUMNS:
+            got = merged[column]
+            want = merged[f"{column}_recomputed"]
+            mismatches = (got - want).abs() > 1e-9
+            assert not mismatches.any(), (
+                f"{column} disagrees with a recomputation that used only "
+                f"purchases <= {FEATURE_CUTOFF.date()} for "
+                f"{int(mismatches.sum())} of {len(merged)} customers. Either a "
+                f"feature used post-cutoff data, or data/feature_engineering.py "
+                f"has drifted from the Glue job."
+            )
+
+        for column in self.ROUNDED_COLUMNS:
+            diff = (merged[column] - merged[f"{column}_recomputed"]).abs()
+            assert diff.max() <= 1e-4, (
+                f"{column} differs from the recomputation by up to "
+                f"{diff.max():.6g} (tolerance 1e-4) on "
+                f"{int((diff > 1e-4).sum())} customers"
+            )
+
+    def test_recomputation_would_detect_leakage(self, processed_df, features_df):
+        """Control: prove the check above is not vacuous.
+
+        Recompute recency as a *leaking* implementation would: measured to
+        SNAPSHOT (the end of the holdout) instead of to the cutoff T, so
+        post-cutoff purchases count. The pipeline's values must disagree with
+        that for many customers.
+
+        If this found no difference, `test_features_match_observation_window_only`
+        would pass on leaking data and validate nothing. Note that simply
+        feeding full history to `compute_recency_features` does NOT simulate
+        leakage -- the function applies the cutoff itself, which is why this
+        control has to move the boundary instead.
+
+        Measured on the 2026-10-30 feature set: leaking to SNAPSHOT changes
+        9,874 of 9,999 customers, and it changes the two label classes in a way
+        that makes the label trivial to predict. Because churners by definition
+        bought nothing in the 90-day holdout, their recency shifts by exactly
+        -90 days, while retainers shift by 0.68 days on average. One leaked
+        feature would separate the classes nearly perfectly, the model would
+        report a spectacular AUC, and it would collapse in production.
+        """
+        from data.feature_engineering import compute_recency_features
+
+        leaking = compute_recency_features(processed_df, SNAPSHOT)
+        merged = features_df.merge(leaking, on="customer_id", suffixes=("", "_leak"))
+        differ = (merged["days_since_last_purchase"]
+                  - merged["days_since_last_purchase_leak"]).abs() > 1e-9
+
+        n_differ = int(differ.sum())
+        assert n_differ > 0, (
+            "Recency measured to the snapshot is identical to recency measured "
+            "to the feature cutoff for every customer. That means no customer "
+            "purchased after the cutoff, the dataset is not what the lab "
+            "assumes, and the leakage check above is not testing anything."
+        )
+        assert n_differ < len(merged), (
+            f"Recency measured to the snapshot differs for all {len(merged)} "
+            f"customers, which means even customers with no post-cutoff "
+            f"purchases changed. Check the cutoff arithmetic in "
+            f"data/feature_engineering.py."
+        )
+
+    def test_event_time_is_fresh(self, features_df):
+        """The feature set must be less than 48 hours old.
+
+        `event_time` is Fractional epoch seconds -- the wall-clock time the Lab 2
+        feature job ran, NOT the feature cutoff T. So this is a staleness check
+        on the pipeline, not on the data's own dates.
+
+        Why it matters: a model trained on a month-old feature set is being
+        promoted as if it reflected production. The CI build reads whatever is
+        in `features/` at push time, so if this fails, re-run the job:
+
+            bash scripts/resume-lab3.sh            # the job needs NAT egress
+            aws glue start-job-run --job-name northstar-dev-feature-engineer
+            bash scripts/pause-lab3.sh             # ~90 s later
+        """
+        import time
+
+        assert "event_time" in features_df.columns, (
+            "features/ has no event_time column; the freshness check cannot run "
+            "and a feature set of unknown age must not be trained on."
+        )
+
+        event_time = pd.to_numeric(features_df["event_time"], errors="coerce")
+        assert event_time.notna().all(), (
+            f"{int(event_time.isna().sum())} feature rows have a non-numeric "
+            f"event_time. It must be Fractional epoch seconds, not an ISO string."
+        )
+
+        newest = event_time.max()
+        age_hours = (time.time() - newest) / 3600.0
+        age_timestamp = pd.to_datetime(newest, unit="s", utc=True)
+
+        assert age_hours < 48, (
+            f"Feature set is {age_hours:.1f} hours old (event_time "
+            f"{age_timestamp.isoformat()}). The pipeline refuses to train on a "
+            f"feature set older than 48 hours. Re-run "
+            f"northstar-dev-feature-engineer; it takes about 90 seconds."
+        )
+
+        assert age_hours > -1, (
+            f"event_time is in the future ({age_timestamp.isoformat()}, "
+            f"{age_hours:.1f} h ahead of now). Check that the job wrote epoch "
+            f"seconds rather than milliseconds."
+        )
 
 
 # ── Cross-dataset consistency ─────────────────────────────────────────────────

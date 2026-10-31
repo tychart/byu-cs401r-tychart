@@ -424,3 +424,201 @@ class TestStoredMetricsGate:
             f"The reference dataset measures 22.0%. Check that your validation "
             f"split is stratified."
         )
+
+
+# ── Champion regression ───────────────────────────────────────────────────────
+
+# The registry group the candidate is registered into by pipeline_definition.py.
+# Overridable so the gate can be pointed at a scratch group without editing code.
+MODEL_PACKAGE_GROUP = os.environ.get("MODEL_PACKAGE_GROUP", "northstar-churn-models")
+
+# Allowed regression against the champion. The handout's number; also roughly one
+# standard error of AUC across the 200-split sweep recorded in
+# docs/lab3-model-design.md, so it tolerates split noise and still catches real
+# degradation.
+MAX_AUC_REGRESSION = 0.02
+
+
+def _champion_auc(description):
+    """Pull a package's AUC out of its registry record.
+
+    Two places it can live, tried in order:
+
+    1. `CustomerMetadataProperties` -- written by Task 3's lineage step.
+       Cheapest, and what a mature registry should carry.
+    2. `ModelMetrics.ModelQuality.Statistics.S3Uri` -- what the pipeline's
+       RegisterModel step writes, pointing at the `evaluation_metrics.json` the
+       training job uploaded. Needs an S3 read.
+
+    Returns None when neither carries an AUC. The test treats that as an
+    unusable champion rather than a pass: a gate that cannot see a number has
+    not evaluated anything.
+    """
+    metadata = description.get("CustomerMetadataProperties") or {}
+    for key in ("auc_roc", "auc", "model_auc"):
+        if key in metadata:
+            try:
+                return float(metadata[key])
+            except (TypeError, ValueError):
+                continue
+
+    metrics = description.get("ModelMetrics") or {}
+    statistics = (metrics.get("ModelQuality") or {}).get("Statistics") or {}
+    uri = statistics.get("S3Uri")
+    if not uri or not uri.startswith("s3://"):
+        return None
+
+    bucket, _, key = uri[len("s3://"):].partition("/")
+    try:
+        import boto3
+        body = boto3.client("s3").get_object(Bucket=bucket, Key=key)["Body"].read()
+        payload = json.loads(body)
+    except Exception:  # noqa: BLE001 - a missing metrics object is not fatal
+        return None
+
+    for field in ("auc_roc", "auc"):
+        if field in payload:
+            try:
+                return float(payload[field])
+            except (TypeError, ValueError):
+                return None
+    return None
+
+
+@pytest.fixture(scope="session")
+def champion():
+    """Newest `Approved` model package, or None if the registry has none.
+
+    **The champion is the newest Approved package, not the newest package.** The
+    candidate under test was registered as `PendingManualApproval` minutes before
+    this file runs, so a "newest package" lookup would compare the model with
+    itself and always pass.
+
+    An empty Approvals list is a real state (nobody has promoted anything yet)
+    and is skipped loudly. A credentials or permissions failure inside CodeBuild
+    is NOT skipped: it means the gate did not run, and a gate that cannot fail is
+    not a gate.
+    """
+    try:
+        import boto3
+    except ImportError:
+        pytest.skip("boto3 not installed; cannot query the Model Registry")
+
+    try:
+        client = boto3.client("sagemaker")
+        response = client.list_model_packages(
+            ModelPackageGroupName=MODEL_PACKAGE_GROUP,
+            ModelApprovalStatus="Approved",
+            SortBy="CreationTime",
+            SortOrder="Descending",
+            MaxResults=5,
+        )
+    except Exception as exc:  # noqa: BLE001 - re-raised or skipped below
+        if os.environ.get("CODEBUILD_BUILD_ID"):
+            raise AssertionError(
+                f"Could not read the Model Registry in CI ({exc!r}). The champion "
+                f"gate cannot run, so this build must not pass."
+            ) from exc
+        pytest.skip(f"Model Registry unavailable ({exc!r})")
+
+    packages = response.get("ModelPackageSummaryList", [])
+    if not packages:
+        return None
+
+    summary = packages[0]
+    description = client.describe_model_package(
+        ModelPackageName=summary.get("ModelPackageArn"))
+    return {
+        "version": summary.get("ModelPackageVersion"),
+        "arn": summary.get("ModelPackageArn"),
+        "auc": _champion_auc(description),
+    }
+
+
+@pytest.fixture(scope="session")
+def candidate_auc():
+    """AUC of the model this build just trained, from its metrics file."""
+    metrics_path = os.environ.get("EVAL_METRICS_PATH", "/tmp/eval_metrics.json")
+    if not Path(metrics_path).exists():
+        pytest.skip(f"Evaluation metrics not found at {metrics_path}.")
+    with open(metrics_path) as f:
+        return json.load(f).get("auc_roc")
+
+
+class TestChampionRegression:
+    """Gate the candidate against the model currently in production.
+
+    The other gates in this file ask "is this model good?". This one asks "is it
+    worse than what we already have?", which is the question a promotion decision
+    actually turns on. A candidate clearing 0.50 precision while the champion
+    clears 0.72 is a regression that absolute thresholds cannot see.
+
+    Two honest limits, stated because the number looks more authoritative than
+    it is:
+
+    * The champion's AUC and the candidate's AUC were measured on different
+      validation splits (different seed, and usually a different training
+      commit). This compares two 30% samples of the same population; it is not
+      a paired test.
+    * It is therefore a coarse guard, which is why the tolerance is 0.02 rather
+      than a strict `>=`. A production deployment gate would re-score both
+      models on one held-out set.
+    """
+
+    def test_a_champion_exists(self, champion):
+        """A promotion decision with no incumbent to compare against is not a
+        promotion decision. Fail loudly rather than quietly passing.
+
+        This is not a strict test: before the first package is approved there is
+        genuinely nothing to compare, and the handout's order is "green run,
+        approve it, then final green run". So it skips with instructions rather
+        than failing. It exists to make the skip visible in the log instead of
+        leaving the regression test looking unrunnable.
+        """
+        if champion is None:
+            pytest.skip(
+                f"No Approved model package in {MODEL_PACKAGE_GROUP}. Promote one "
+                f"before the final green run: aws sagemaker update-model-package "
+                f"--model-package-arn <arn> --model-approval-status Approved"
+            )
+        assert champion["version"] is not None
+
+    def test_champion_regression(self, champion, candidate_auc):
+        """Candidate AUC must be within 0.02 of the champion's.
+
+        The `warnings.warn` line below is load-bearing, not noise: a passing test
+        prints nothing under `pytest -v`, so without it the build log records a
+        PASS with no evidence of *which* champion was compared. The buildspec
+        runs this file with `-rw`, so the message lands in the warnings summary
+        next to the test name.
+        """
+        if champion is None:
+            pytest.skip(f"No Approved model package in {MODEL_PACKAGE_GROUP}")
+        if champion["auc"] is None:
+            pytest.skip(
+                f"Champion v{champion['version']} carries no AUC: neither "
+                f"CustomerMetadataProperties nor ModelMetrics.ModelQuality yields "
+                f"a number. Re-register it with metrics attached."
+            )
+
+        champ_auc = champion["auc"]
+        version = champion["version"]
+        floor = round(champ_auc - MAX_AUC_REGRESSION, 4)
+
+        assert candidate_auc is not None, (
+            "auc_roc missing from the candidate's evaluation metrics; the "
+            "regression check cannot run."
+        )
+
+        import warnings
+        warnings.warn(
+            f"champion v{version} auc={champ_auc:.4f}; candidate auc={candidate_auc:.4f}",
+            stacklevel=2,
+        )
+
+        assert candidate_auc >= floor, (
+            f"Candidate AUC {candidate_auc:.4f} regressed against champion "
+            f"v{version} (auc={champ_auc:.4f}) by more than {MAX_AUC_REGRESSION}: "
+            f"candidate must be >= {floor:.4f}. Refusing to promote a model worse "
+            f"than the one in production."
+        )

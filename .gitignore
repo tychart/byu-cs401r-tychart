@@ -18,3 +18,12 @@ __pycache__/
 # uploaded to s3://<bucket>/artifacts/models/. These are just local scratch copies.
 /model/
 /output/
+
+# Test staging. buildspec.yml's pre_build downloads these from S3 into ./data so
+# tests/test_data.py has something to validate, and a local run does the same.
+# They are ~160k processed rows and must never be committed; data/ itself stays
+# tracked because data/feature_engineering.py lives there.
+/data/processed/
+/data/features/
+/data/raw/
+/data/northstar-raw-sample.csv
