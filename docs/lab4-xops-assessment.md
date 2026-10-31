@@ -18,7 +18,7 @@ plus a fourth stage for the human promotion decision:
 | --- | --- | --- |
 | `Source` | **1. Source** | CodeConnections → GitHub `main`, `OutputArtifactFormat: CODE_ZIP` |
 | `Build` | **2. Test** | `buildspec.yml` → `pre_build` |
-| `Build` | **3. Build** | `buildspec.yml` → `build`: upsert `pipeline_definition.py`, then run the SageMaker Pipeline `TrainChurnModel` TrainingStep |
+| `Build` | **3. Build** | `buildspec.yml` → `build`: upsert `models/churn/pipeline_definition.py`, then run the SageMaker Pipeline `TrainChurnModel` TrainingStep |
 | `Build` | **4. Evaluate** | `buildspec.yml` → `build`: the in-training gates inside `churn_model.evaluate_model()`, then `tests/test_model.py` + `tests/test_fairness.py` |
 | `Build` | **5. Register** | SageMaker Pipeline `RegisterChurnModel` step, status `PendingManualApproval` |
 | `ManualApproval` | *(the human decision)* | `ReviewModelMetrics` approval action, SNS-notified via `northstar-model-approvals` |
@@ -218,7 +218,7 @@ revenue.
 
 **Why this is not yet real.** Nothing in this platform scores production traffic:
 there is no endpoint and no realised-label feed, so `AucRoc` is a designed metric
-with no emitter. That gap is named as the Level 3 → 4 blocker in the MLOps
+with no emitter. That gap is named as the Level 2 → 3 blocker in the MLOps
 assessment below, and it is deliberately not papered over — an alarm on a metric
 nobody publishes would look like coverage while measuring nothing.
 
@@ -229,3 +229,62 @@ Retrain whenever the feature distribution shifts (PSI on
 not accumulated, so a distribution shift here is far more likely to be a bug in the
 regeneration than genuine drift, and a retrain would happily fit the bug. The AUC
 trigger catches the same failure a week later, with a signal that means something.
+
+---
+
+## DataOps Maturity
+
+*Ladder, stated because the chapter's table is not in this repository:* **0**
+manual · **1** defined but hand-run · **2** automated happy path · **3** measured
+in production · **4** self-optimising.
+
+**Current level: 2**
+
+**Evidence:** The path is code, not clicks. `infrastructure/environments/dev/main.tf`
+and `infrastructure/modules/iam/main.tf` build the VPC, bucket, catalog, feature
+group and least-privilege roles. Grain is enforced by `glue-scripts/transform.py`;
+the temporal split lives in `glue-scripts/feature_engineer.py` and is *proven*
+rather than asserted — `tests/test_data.py::TestTemporalSplit` recomputes the
+time-sensitive features from `processed/` via `data/feature_engineering.py` and
+matches `features/` for all 9,999 customers on every build, with a control test
+showing it detects leakage. Missing data fails rather than skips (50 tests in
+`docs/lab4-build-green.log`), staleness is gated at 48 h, the contract is
+`docs/lab2-data-contract.md`, and the exact data version reaches the model card
+(`training_data_timestamp`, `feature_job_run_id`) in `docs/lab4-model-package.json`.
+
+**Gap to Level 3:** every check above runs at *build* time. Nothing observes the
+data between builds — no drift detection on the 11 feature distributions, no
+ingest volume or schema anomaly alert, and no signal when the Glue job writes a
+materially shifted distribution but still exits `SUCCEEDED`.
+
+**Top priority investment:** a **Great Expectations** suite run daily by
+EventBridge Scheduler → Glue Python shell, publishing per-feature population
+stability index to `NorthStar/Data` with a CloudWatch alarm above 0.2. It turns
+the existing build-time assertions into production observation for roughly the
+cost of one feature job (~$0.08/day).
+
+## MLOps Maturity
+
+**Current level: 2**
+
+**Evidence:** Commit→test→train→evaluate→register is automated and demonstrably
+halts: `pipeline.yaml` + `buildspec.yml`, green in `docs/lab4-build-green.log` (76
+tests, package 9 registered) and red in `docs/lab4-build-failed.log` (`PRE_BUILD
+FAILED`, no package). The bar is relative, not absolute —
+`tests/test_model.py::TestChampionRegression` reads the newest `Approved` package
+and warns `champion v8 auc=0.7823`. Promotion is human and recorded
+(`put-approval-result` summaries in `docs/lab4-failure-demo.txt`). Tracking is
+deliberate (`docs/lab4-mlflow-runs.txt`, `max_depth` 4/6/8). Failure reached a
+confirmed subscriber (`docs/lab4-alarm-email.png`). Fairness is measured per tier
+— 31.8 pp, flagged not blocked.
+
+**Gap to Level 3:** no production signal. No endpoint means no scoring traffic, no
+realised labels and no `AucRoc` to alarm on, so both retraining triggers are
+designed and unemitted. The improvement criterion is likewise only half-automated:
+CI compares two separately-measured AUCs, which cannot separate a 0.01 gain from
+the measured 0.0155 split noise.
+
+**Top priority investment:** a **shadow SageMaker endpoint** plus a daily
+outcome-join job publishing `NorthStar/Model AucRoc` — the one missing emitter
+that makes the designed performance trigger real — and a shared holdout to
+automate the paired promotion check.
