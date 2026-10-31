@@ -78,31 +78,36 @@ fresh deploy from the template would fail `pre_build` on the data-bucket copy.
    Verified again on 2026-10-31: `929d388` started execution
    `1f8460f5-c0a8-4823-ad76-0f1ce9ce918d` within seconds.
 
-## Next steps — only the finish sequence is left
+## Status: SUBMITTED (2026-10-31)
 
-All four tasks are written and committed. Nothing on `main` after `d924e25` has
-been pushed; `origin/main` is at `2bede51` (the revert), which is what the tag
-will contain once the docs commits are pushed.
+Tagged **`lab4-submit`** at `d4d3c5f` and pushed. `origin/main` and
+`origin/lab4-submit` both point at it. All four tasks are complete and every
+evidence file the handout lists is in the tag.
 
-1. **Delete the CI stack before the final docs push** — a docs-only push starts
-   another training run and registers v10, which would also make
-   `docs/lab4-model-registry.json` stale.
-   `aws cloudformation delete-stack --stack-name northstar-cicd`, wait, then empty
-   the versioned artifacts bucket (`northstar-dev-cicd-artifacts-345594594463`) and
-   `aws s3api delete-bucket`, then delete the `/aws/codebuild/northstar-ci` log group.
-2. Push `main`, then `git tag lab4-submit` and `git push origin lab4-submit`.
-   A tag push does not trigger the pipeline (the workflow filters on
-   `branches: [main]`), but the `main` push will show a **red** GitHub Actions run
-   because `northstar-github-actions-trigger` died with the stack. Expected, not a
-   defect.
-3. **Do not set the packages to `Rejected`** unless Lab 2's data bucket is being
-   torn down: the handout's instruction is conditional on the data bucket going
-   away, and we are only pausing it. `docs/lab4-model-registry.json` must keep
-   showing v8 `Approved` for Task 1's rubric.
-4. Lab 2 stays paused (NAT destroyed). No NAT is needed by any Lab 4 phase.
+**Teardown done:** `northstar-cicd` deleted, the versioned artifacts bucket
+(`northstar-dev-cicd-artifacts-345594594463`) emptied and deleted, and the
+`/aws/codebuild/northstar-ci` log group deleted. Verified gone: pipeline,
+CodeBuild project, SNS topic, alarm, OIDC role.
 
-Freshness note: the feature set expires **2026-11-01 06:40Z**. That only matters
-for future pushes; shipping does not re-run the tests.
+**Deliberately kept:** Lab 2's stack (NAT destroyed — 0 gateways), the data
+bucket with the model artifacts, the Model Registry (v7/v8/v9 `Approved`, so
+`docs/lab4-model-registry.json` stays accurate), and the MLflow App (`Created`,
+$0 idle). Do not set those packages to `Rejected` while the data bucket exists.
+
+**The red GitHub Actions run on `d4d3c5f` is expected.** The workflow assumes
+`northstar-github-actions-trigger`, which the deleted stack created; it fails with
+`Not authorized to perform sts:AssumeRoleWithWebIdentity`. Redeploying the stack
+recreates the role.
+
+## If Lab 4 has to be re-run or re-graded
+
+1. `bash scripts/resume-lab3.sh` (NAT), re-run
+   `northstar-dev-feature-engineer` — the freshness test needs `event_time`
+   under 48 h — then `bash scripts/pause-lab3.sh`.
+2. Redeploy `pipeline.yaml` with `CAPABILITY_NAMED_IAM`; the connection
+   `northstar-github` still exists and is `AVAILABLE`.
+3. The evidence files regenerate only from a live stack; they are already
+   committed, so a re-run is for verification, not for the submission.
 
 ## Useful commands
 
