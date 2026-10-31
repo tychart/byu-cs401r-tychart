@@ -438,6 +438,14 @@ clean-looking report that had verified nothing. Keep that behaviour.
   twice. Watch for extractor artifacts: CloudWatch namespace names
   (`NorthStar/Model`) and S3 prefixes (`features/`) are not repo paths, and
   stripping leading dots turns `.github/workflows/x.yml` into a false miss.
+- **Pushing `main` after the CI stack is deleted shows a RED GitHub Actions run.**
+  `.github/workflows/trigger-pipeline.yml` assumes
+  `northstar-github-actions-trigger` through GitHub OIDC, and that role is created
+  by `northstar-cicd`, so the push after teardown fails at
+  `configure-aws-credentials`. Expected and harmless — the role is gone on
+  purpose. A **tag** push does not trigger it (the workflow filters on
+  `branches: [main]`). If CI is needed again, redeploy the stack, which recreates
+  the role.
 - **The build needs `data/feature_engineering.py`; it existed only from `929d388`.**
   Every build before that failed at `pre_build` on `tests/test_features.py`
   (`ModuleNotFoundError: data.feature_engineering`). That red period is why the
