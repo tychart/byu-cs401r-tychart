@@ -1,0 +1,15 @@
+tracking_uri: arn:aws:sagemaker:us-east-1:345594594463:mlflow-app/app-W4LYKOSSDJZE
+experiment:   northstar-churn
+runs:         3
+
+Hyperparameters that differ between these runs:
+  params.max_depth: 4, 6, 8
+
+Note: the SageMaker Experiments that the CI pipeline creates on every
+execution are deliberately not used as evidence here. They record that a
+pipeline ran, not what was varied.
+
+                             run_id tags.mlflow.runName                       start_time  metrics.n_val_samples  metrics.auc_vs_baseline  metrics.lift_ci_low  metrics.positive_rate_val  metrics.baseline_auc  metrics.lift_ci_high  metrics.precision_top10  metrics.auc_roc  metrics.recall_top10 params.subsample params.eta params.colsample_bytree params.max_depth params.min_child_weight params.xgboost_version params.training_start_date        params.feature_group_name params.training_end_date params.scale_pos_weight params.num_round
+0  4afe0e63a8c14bb697b6ab80cba7d727           xgb-final 2026-10-16 07:57:12.332000+00:00                 3000.0                   0.0541               0.0347                       0.22                0.7232                0.0738                   0.7233           0.7773                0.3288              0.8        0.1                     0.8                6                       5                  3.4.1                 2026-01-01  northstar-dev-customer-features               2027-01-01       3.544805194805195              200
+1  a0de5b3985a64e339765f959c47931aa          xgb-depth8 2026-10-16 07:56:19.971000+00:00                 3000.0                   0.0478               0.0279                       0.22                0.7232                0.0685                   0.7067           0.7711                0.3212              0.8        0.1                     0.8                8                       5                  3.4.1                 2026-01-01  northstar-dev-customer-features               2027-01-01       3.544805194805195              200
+2  3e37d67f438f4ab69c76896f2d7513a7          xgb-depth4 2026-10-16 07:55:36.314000+00:00                 3000.0                   0.0581               0.0397                       0.22                0.7232                0.0771                   0.7367           0.7813                0.3348              0.8        0.1                     0.8                4                       5                  3.4.1                 2026-01-01  northstar-dev-customer-features               2027-01-01       3.544805194805195              200

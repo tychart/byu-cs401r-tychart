@@ -92,3 +92,140 @@ $0 because every component is either serverless (CodePipeline, CodeBuild,
 SageMaker Pipeline definitions, Model Registry, SNS) or storage-only; the only
 idle-charging resource in this platform is the Lab 2 NAT Gateway, which is paused
 and is not needed by any phase of this pipeline.
+
+---
+
+## Champion-Challenger
+
+Two different questions, deliberately separated. **Blocking** is about not getting
+worse; **promoting** is about being better enough to justify a production change.
+This pipeline does the first automatically and requires both for the second.
+
+### Definitions
+
+* **Champion** — the newest model package in `northstar-churn-models` with
+  approval status `Approved`. Not the newest package: the candidate is registered
+  as `PendingManualApproval` before the gate runs, so "newest" would compare the
+  model with itself and always pass. This is what
+  `tests/test_model.py::TestChampionRegression` retrieves via
+  `list_model_packages(ModelApprovalStatus="Approved", SortBy="CreationTime")`.
+* **Challenger** — the package this build just registered: the newest
+  `PendingManualApproval` package, and the `evaluation_metrics.json` written to
+  `s3://northstar-dev-data-345594594463/artifacts/evaluations/<commit>/`.
+
+### Blocking rule (automated, in CI)
+
+A build **fails** — and `post_build` sets the package to `Rejected` — if any of:
+
+| # | Condition | Threshold | Where enforced |
+| --- | --- | --- | --- |
+| 1 | `precision_top10` | `< 0.50` fails | `evaluate_model()` in training, then `TestStoredMetricsGate` |
+| 2 | `recall_top10` | `< 0.25` fails | same |
+| 3 | `lift_ci_low` vs recency-only baseline | `<= 0` fails | same — the CI must exclude zero |
+| 4 | `auc_roc` vs champion | `< champion − 0.02` fails | `TestChampionRegression` |
+
+**Why 0.02.** It is the split-to-split noise floor, measured rather than guessed:
+four runs on byte-identical data produced AUC 0.7276–0.7431, a spread of 0.0155
+(`docs/lab3-plan.md`). A tolerance tighter than the noise would fail good models on
+a re-roll of the random seed; 0.02 sits just above it, so it catches real
+degradation and forgives re-draws of the validation split.
+
+### Promotion rule (the human decision)
+
+Approve the challenger — i.e. it becomes the new champion — **only if all four
+blocking conditions hold AND**:
+
+| # | Condition | Threshold |
+| --- | --- | --- |
+| 5 | Point-estimate improvement | `auc_roc ≥ champion_auc + 0.01` |
+| 6 | Improvement is distinguishable from split noise | paired bootstrap 95% CI on `(AUC_challenger − AUC_champion)` over one shared held-out set **excludes zero** |
+
+**Why both.** Condition 5 is a practical floor, not a statistical one. Condition 6
+is the real test: the measured split noise is 0.0155, so a +0.01 AUC "improvement"
+measured on two *different* validation splits is indistinguishable from luck. The
+only defensible way to claim a gain is to score both models on the same rows and
+bootstrap the difference — the same paired-bootstrap method `evaluate_model()`
+already uses against the recency baseline.
+
+**Stated honestly: condition 6 is not automated today.** The CI gate compares two
+AUCs that were each measured on their own 30% validation split, so it can enforce
+non-regression but it cannot certify improvement. Closing that is the "Top priority
+investment" in the MLOps section below. Until then, promotion on grounds of
+improvement is a human check against a re-scored comparison, and the
+`ManualApproval` summary record is where that reasoning is written down — see
+`docs/lab4-failure-demo.txt` and the `put-approval-result` summary for v9.
+
+**Why not just gate on AUC > 0.75.** A fixed AUC bar was removed from this course
+on 2026-08-02 after 200 splits showed the reference model falling below 0.72 on
+58% of them: it was gating the random seed. A relative, interval-based rule does
+the job the absolute one was pretending to do.
+
+---
+
+## Retraining Triggers
+
+Both triggers are automated decisions, not standing invitations for someone to
+notice something. Both are **designed here and not deployed** — the pipeline and
+role they would call already exist (`northstar-pipeline`,
+`northstar-dev-feature-engineer`).
+
+### (a) Scheduled trigger — weekly, Monday 06:00 UTC
+
+| Element | Value |
+| --- | --- |
+| AWS service that fires it | **EventBridge Scheduler** (`aws_scheduler_schedule`) |
+| Schedule expression | `cron(0 6 ? * MON *)` — 06:00 UTC every Monday |
+| Targets, in order | 1) `glue:StartJobRun` on `northstar-dev-feature-engineer`; 2) on job success, `codepipeline:StartPipelineExecution` on `northstar-pipeline` |
+| Guard | the build's freshness test refuses a feature set older than 48 h, so a silently skipped Glue run fails the pipeline instead of training on stale data |
+
+**Why weekly and why 06:00 UTC.** The customers, transactions and churn labels are
+regenerated on a monthly cadence, so a weekly rebuild is already more frequent than
+the data changes — it exists to catch *pipeline* drift (a transform change, a
+dependency bump) within a week rather than a month. 06:00 UTC is 00:00 in
+Provo: the job finishes before the working day, and nothing on the critical path
+depends on it, so a failure is discovered in business hours.
+
+**Measured cost per run: ~$0.08.** The last feature job ran 216 s (not the
+handout's ~90 s — measured `ExecutionTime` on
+`northstar-dev-feature-engineer`), which is 0.12 DPU-hour at $0.44 ≈ $0.053; plus
+~5 min of `BUILD_GENERAL1_MEDIUM` CodeBuild ≈ $0.025; plus 53 s of `ml.m5.large`
+spot ≈ $0.001. Fifty-two weekly runs is roughly **$4/year**, and the monthly
+cadence of the underlying data means a monthly schedule would cost $1/year for no
+loss of protection against pipeline drift within the month.
+
+### (b) Performance-based trigger — AUC degrades in production
+
+| Element | Value |
+| --- | --- |
+| Metric | `NorthStar/Model` → `AucRoc`, dimension `ModelPackageGroup=northstar-churn-models` |
+| Emitted by | a daily scoring job that joins the previous 30 days of predictions to realised churn labels and calls `cloudwatch:PutMetricData` |
+| Threshold | `AucRoc < 0.70` for **2 consecutive** 1-day periods |
+| AWS service that fires it | **CloudWatch alarm** (2 × 1-day periods, `TreatMissingData: breaching`) → **EventBridge rule** → `codepipeline:StartPipelineExecution` |
+
+**Why 0.70.** Champion AUC is 0.7823 and the recency-only baseline is 0.7208.
+0.70 is below *both*: it does not mean "a bit worse", it means the model has
+stopped beating the free three-line rule, which is the point at which the model has
+no reason to exist. It is also far outside the measured split noise (0.0155), so
+it fires on real degradation rather than on a bad week of labels.
+
+**Why 2 consecutive periods.** A single daily AUC is computed from the handful of
+churn outcomes that resolve each day — roughly 25, if the 2,200 churners in the
+90-day label window are spread across the customer base — so it moves by several
+points on which cases happened to resolve. Requiring persistence costs one day of
+latency and removes almost all of the false alarms — the asymmetry is right,
+because a spurious retrain costs ~$0.08 and a forgotten degraded model costs
+revenue.
+
+**Why this is not yet real.** Nothing in this platform scores production traffic:
+there is no endpoint and no realised-label feed, so `AucRoc` is a designed metric
+with no emitter. That gap is named as the Level 3 → 4 blocker in the MLOps
+assessment below, and it is deliberately not papered over — an alarm on a metric
+nobody publishes would look like coverage while measuring nothing.
+
+### A third trigger considered and rejected
+
+Retrain whenever the feature distribution shifts (PSI on
+`days_since_last_purchase` > 0.2). Rejected for now: this dataset is regenerated,
+not accumulated, so a distribution shift here is far more likely to be a bug in the
+regeneration than genuine drift, and a retrain would happily fit the bug. The AUC
+trigger catches the same failure a week later, with a signal that means something.
