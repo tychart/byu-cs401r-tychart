@@ -407,13 +407,27 @@ clean-looking report that had verified nothing. Keep that behaviour.
   Re-deploying the stack from the template alone would fail `pre_build` with
   `AccessDenied` on the first `aws s3 cp`. Add the data-bucket statement before
   trusting a fresh deploy.
-- **Position (2026-10-31): first green run.** `929d388` ran the whole build:
-  `PRE_BUILD` 29+21 passed, `BUILD` 26 passed + 5 warnings, `POST_BUILD` SUCCEEDED,
-  registry gained **v8 `PendingManualApproval`**. **v7 is the `Approved` champion**
-  (auc 0.7823) that `TestChampionRegression` compares against. Evidence is saved:
-  `docs/lab4-build-green.log`, `lab4-pipeline-runs.txt`, `lab4-model-registry.json`.
-  The pipeline execution itself stays `InProgress` because the `ManualApproval`
-  stage waits for a human — that is the design, not a hang.
+- **Position (2026-10-31): Tasks 1 and 2 done, pipeline watched green twice.**
+  Evidence is regenerated against the **final green run `2bede51`** (build
+  `3580a032`): 76 tests, `[pipeline] registered: …/northstar-churn-models/9`.
+  Registry: **v7/v8/v9 `Approved`** (v8 was the champion the final green log's
+  regression test compared against). Failure demo: `037a947` failed at
+  `PRE_BUILD`, alarm `OK → ALARM → OK`, `lab4-failure-demo.txt` has all three
+  snapshots. Evidence is committed in `66589f1` but **not pushed** — a docs-only
+  push starts another training run; push only after the CI stack is deleted.
+- **`codepipeline put-approval-result --result` shorthand splits on commas.**
+  `--result "summary=a, b,status=Approved"` fails with `Invalid type for
+  parameter result.summary … value: ['a','b']`. Pass JSON instead:
+  `--result '{"summary": "text, with commas", "status": "Approved"}'`.
+  The token comes from `get-pipeline-state` → `ManualApproval` action
+  `latestExecution.token`; it is absent from `get-pipeline-execution`'s response.
+- **The failure alarm lands ~90 s after the build ends** (300 s period, 1
+  datapoint), so a build that just failed still reads `OK`. Poll it; do not
+  snapshot immediately.
+- **A deliberate failing test must go inside `test_data.py`/`test_features.py`/
+  `test_model.py`/`test_fairness.py`.** `buildspec.yml` names those four, so a new
+  `tests/test_x.py` is never executed and the build goes green — a failure demo
+  that demonstrates nothing.
 - **The build needs `data/feature_engineering.py`; it existed only from `929d388`.**
   Every build before that failed at `pre_build` on `tests/test_features.py`
   (`ModuleNotFoundError: data.feature_engineering`). That red period is why the

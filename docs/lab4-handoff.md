@@ -5,17 +5,36 @@ Snapshot: **2026-10-31**, `main` at `929d388` (green run). Lab 3 remains tagged
 
 ## Position
 
-**Task 1 is done and the pipeline is green for the first time.** `929d388` run:
-`PRE_BUILD` (29 + 21 passed) → `BUILD` (26 passed, 5 warnings) → `POST_BUILD`
-SUCCEEDED, and the registry gained **v8 `PendingManualApproval`**. **v7 is the
-`Approved` champion** (auc 0.7823) the regression test compares against.
+**Task 1 and Task 2 are both done.** Two green runs and one deliberate red run.
 
-Evidence already saved (regenerate only while the stack is up):
-`docs/lab4-build-green.log`, `docs/lab4-pipeline-runs.txt`,
-`docs/lab4-model-registry.json`.
+| Run | Commit | Result |
+| --- | --- | --- |
+| first green | `929d388` | 76 tests, v8 registered |
+| deliberate failure | `037a947` | `PRE_BUILD FAILED`, no `BUILD` phase, no package, alarm `ALARM` |
+| **final green** | `2bede51` | 76 tests, v9 registered, champion compared = **v8** |
 
-The pipeline execution reads `InProgress` because the `ManualApproval` stage is
-waiting for a human. That is the design, not a hang.
+Registry: v7 / v8 / v9 all `Approved`. The final green log's champion warning reads
+`champion v8 auc=0.7823; candidate auc=0.7823`.
+
+Evidence is committed in `66589f1` and **not pushed** — a docs-only push starts
+another training run and registers v10. Per the handout, delete the CI stack
+before the final docs push.
+
+### Task 2 evidence (committed)
+
+| File | What it shows |
+| --- | --- |
+| `docs/lab4-failure-demo.txt` | `BEFORE` (alarm `OK`, v8 newest) → `AFTER FAILED RUN` (`ALARM`, registry unchanged) → `AFTER REVERT` (v9 `PendingManualApproval`, alarm `OK`), plus a dated note that the `InProgress` pipeline in the last snapshot was the `ManualApproval` gate, not a hang |
+| `docs/lab4-build-failed.log` | build `b050a7e0` on `037a947`: the assertion verbatim, `PRE_BUILD FAILED`, no `BUILD` phase, `1 failed / 29 passed` |
+| `docs/lab4-build-green.log` | final green run `2bede51`: 29/21/26 passed, `champion v8` warning, fairness flag at 31.8 pp, `[pipeline] … pipeline Succeeded`, `[pipeline] registered: …/9` |
+| `docs/lab4-pipeline-runs.txt` | every run with phases and pytest summaries |
+| `docs/lab4-model-registry.json` | v1–v9 with approval status |
+| `docs/lab4-xops-assessment.md` | `## Pipeline Stage Mapping` (Tasks 3/4 sections still to write) |
+
+**Still missing for Task 2: `docs/lab4-alarm-email.png`.** The alarm email was
+received and confirmed correct (subject `ALARM: "northstar-ci-build-failure"`,
+received time visible, `OK -> ALARM`, timestamp `21:37:35 UTC`); the PNG has to be
+saved by hand from Tyler's mailbox.
 
 ### Task 1 — what landed in `929d388`
 
@@ -58,21 +77,18 @@ fresh deploy from the template would fail `pre_build` on the data-bucket copy.
 
 ## Next steps
 
-1. **Task 2 failure demo**: `snap "BEFORE"` (alarm is `OK`, newest version v8) →
-   push a deliberately failing assertion → `snap "AFTER FAILED RUN"` → revert →
-   `snap "AFTER REVERT"`. Needs an SNS email subscription first; there is **no
-   subscription on `northstar-model-approvals` yet**, so the alarm currently
-   cannot deliver.
-2. Approve v8 (or the revert's new version) so the pipeline's `ManualApproval`
-   stage completes and stays the champion for later runs.
-3. **Task 3**: lineage onto the final green package via
-   `update-model-package --customer-metadata-properties`, then
-   `docs/lab4-model-package.json`; `docs/lab4-mlflow-runs.txt` from the MLflow App.
-4. **Task 4**: `docs/lab4-xops-assessment.md` — needs `## Pipeline Stage Mapping`,
-   `## Champion-Challenger`, `## Retraining Triggers`, `## DataOps Maturity`,
-   `## MLOps Maturity`.
-5. Re-run the feature job before any push after `2026-11-01 06:40Z`, or the
-   freshness test fails the build (by design).
+1. **Task 3**: lineage onto **v9** (the final green run's package) via
+   `update-model-package --customer-metadata-properties` — needs the training data
+   S3 URI + timestamp, the commit SHA (`2bede51`), and the evaluation metrics —
+   then `aws sagemaker describe-model-package` with the **full ARN** into
+   `docs/lab4-model-package.json`. Plus `docs/lab4-mlflow-runs.txt` from the
+   MLflow App (≥3 runs, differing params) and `## Champion-Challenger` /
+   `## Retraining Triggers`.
+2. **Task 4**: `## DataOps Maturity` and `## MLOps Maturity` in
+   `docs/lab4-xops-assessment.md`.
+3. Save `docs/lab4-alarm-email.png`.
+4. Delete the CI stack, then push the docs commit, tag `lab4-submit`, push the tag.
+5. Re-run the feature job before any later push after `2026-11-01 06:40Z`.
 
 ## Useful commands
 
