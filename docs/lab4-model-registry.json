@@ -1,0 +1,79 @@
+{
+    "ModelPackageSummaryList": [
+        {
+            "ModelPackageGroupName": "northstar-churn-models",
+            "ModelPackageVersion": 8,
+            "ModelPackageArn": "arn:aws:sagemaker:us-east-1:345594594463:model-package/northstar-churn-models/8",
+            "CreationTime": "2026-10-31T13:46:00.793000-06:00",
+            "ModelPackageStatus": "Completed",
+            "ModelApprovalStatus": "PendingManualApproval",
+            "ModelPackageRegistrationType": "Registered"
+        },
+        {
+            "ModelPackageGroupName": "northstar-churn-models",
+            "ModelPackageVersion": 7,
+            "ModelPackageArn": "arn:aws:sagemaker:us-east-1:345594594463:model-package/northstar-churn-models/7",
+            "CreationTime": "2026-10-31T00:05:34.950000-06:00",
+            "ModelPackageStatus": "Completed",
+            "ModelApprovalStatus": "Approved",
+            "ModelPackageRegistrationType": "Registered"
+        },
+        {
+            "ModelPackageGroupName": "northstar-churn-models",
+            "ModelPackageVersion": 6,
+            "ModelPackageArn": "arn:aws:sagemaker:us-east-1:345594594463:model-package/northstar-churn-models/6",
+            "CreationTime": "2026-10-30T01:39:46.967000-06:00",
+            "ModelPackageStatus": "Completed",
+            "ModelApprovalStatus": "PendingManualApproval",
+            "ModelPackageRegistrationType": "Registered"
+        },
+        {
+            "ModelPackageGroupName": "northstar-churn-models",
+            "ModelPackageVersion": 5,
+            "ModelPackageArn": "arn:aws:sagemaker:us-east-1:345594594463:model-package/northstar-churn-models/5",
+            "CreationTime": "2026-10-30T01:35:23.027000-06:00",
+            "ModelPackageStatus": "Completed",
+            "ModelApprovalStatus": "PendingManualApproval",
+            "ModelPackageRegistrationType": "Registered"
+        },
+        {
+            "ModelPackageGroupName": "northstar-churn-models",
+            "ModelPackageVersion": 4,
+            "ModelPackageArn": "arn:aws:sagemaker:us-east-1:345594594463:model-package/northstar-churn-models/4",
+            "CreationTime": "2026-10-30T01:00:34.207000-06:00",
+            "ModelPackageStatus": "Completed",
+            "ModelApprovalStatus": "PendingManualApproval",
+            "ModelPackageRegistrationType": "Registered"
+        },
+        {
+            "ModelPackageGroupName": "northstar-churn-models",
+            "ModelPackageVersion": 3,
+            "ModelPackageArn": "arn:aws:sagemaker:us-east-1:345594594463:model-package/northstar-churn-models/3",
+            "ModelPackageDescription": "NorthStar churn XGBoost. AUC=0.7773, precision@top10=0.7233, recall@top10=0.3288, lift 95% CI [0.0347, 0.0738]. Trained 2026-10-16.",
+            "CreationTime": "2026-10-16T01:57:31.191000-06:00",
+            "ModelPackageStatus": "Completed",
+            "ModelApprovalStatus": "PendingManualApproval",
+            "ModelPackageRegistrationType": "Registered"
+        },
+        {
+            "ModelPackageGroupName": "northstar-churn-models",
+            "ModelPackageVersion": 2,
+            "ModelPackageArn": "arn:aws:sagemaker:us-east-1:345594594463:model-package/northstar-churn-models/2",
+            "ModelPackageDescription": "NorthStar churn XGBoost. AUC=0.7711, precision@top10=0.7067, recall@top10=0.3212, lift 95% CI [0.0279, 0.0685]. Trained 2026-10-16.",
+            "CreationTime": "2026-10-16T01:56:38.998000-06:00",
+            "ModelPackageStatus": "Completed",
+            "ModelApprovalStatus": "PendingManualApproval",
+            "ModelPackageRegistrationType": "Registered"
+        },
+        {
+            "ModelPackageGroupName": "northstar-churn-models",
+            "ModelPackageVersion": 1,
+            "ModelPackageArn": "arn:aws:sagemaker:us-east-1:345594594463:model-package/northstar-churn-models/1",
+            "ModelPackageDescription": "NorthStar churn XGBoost. AUC=0.7813, precision@top10=0.7367, recall@top10=0.3348, lift 95% CI [0.0397, 0.0771]. Trained 2026-10-16.",
+            "CreationTime": "2026-10-16T01:55:55.210000-06:00",
+            "ModelPackageStatus": "Completed",
+            "ModelApprovalStatus": "PendingManualApproval",
+            "ModelPackageRegistrationType": "Registered"
+        }
+    ]
+}

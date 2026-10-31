@@ -407,11 +407,18 @@ clean-looking report that had verified nothing. Keep that behaviour.
   Re-deploying the stack from the template alone would fail `pre_build` with
   `AccessDenied` on the first `aws s3 cp`. Add the data-bucket statement before
   trusting a fresh deploy.
-- **Position:** stack `northstar-cicd` is up. Runs currently fail at `pre_build`
-  on `tests/test_features.py` (`ModuleNotFoundError: data.feature_engineering`) by
-  design until Task 1 lands, which leaves the build-failure alarm in `ALARM` —
-  get a green build before demonstrating the failure path so it can be seen
-  returning to `OK`.
+- **Position (2026-10-31): first green run.** `929d388` ran the whole build:
+  `PRE_BUILD` 29+21 passed, `BUILD` 26 passed + 5 warnings, `POST_BUILD` SUCCEEDED,
+  registry gained **v8 `PendingManualApproval`**. **v7 is the `Approved` champion**
+  (auc 0.7823) that `TestChampionRegression` compares against. Evidence is saved:
+  `docs/lab4-build-green.log`, `lab4-pipeline-runs.txt`, `lab4-model-registry.json`.
+  The pipeline execution itself stays `InProgress` because the `ManualApproval`
+  stage waits for a human — that is the design, not a hang.
+- **The build needs `data/feature_engineering.py`; it existed only from `929d388`.**
+  Every build before that failed at `pre_build` on `tests/test_features.py`
+  (`ModuleNotFoundError: data.feature_engineering`). That red period is why the
+  Task 2 failure demo needs a green run *first* — the alarm notifies on a state
+  change, and it is now `OK`, so it can be seen going to `ALARM` and back.
 
 ## 7. Data-engineering invariants
 ## 7. Data-engineering invariants
