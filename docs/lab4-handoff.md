@@ -14,7 +14,7 @@ yet — that is Task 1, not a prerequisite failure.
 | --- | --- | --- |
 | 1. Versioned artifacts bucket | done | `northstar-dev-cicd-artifacts-345594594463`, versioning `Enabled` |
 | 2. GitHub connection | done | `northstar-github` = `AVAILABLE` |
-| 3. `churn_model.train()` + pipeline | done | reproduced Lab 3 exactly; 18/18 model tests on the pipeline-trained model; pipeline `northstar-churn-pipeline` |
+| 3. `churn_model.train()` + pipeline | done | reproduced Lab 3 exactly; 18/18 model tests on the pipeline-trained model; pipeline `northstar-churn-pipeline`; `ml.m5.large` spot verified (v7) |
 | 4. MLEngineer PassRole + tags | done | live policy v2 has `PassSelfToSageMaker` + `sagemaker:AddTags/ListTags` |
 | 5. Lab 2 up + fresh feature job | done | feature job SUCCEEDED 2026-10-30 06:40Z, `event_time` age 0.05 h |
 | 6. `CAPABILITY_NAMED_IAM` deploy | done | stack `CREATE_COMPLETE`; outputs below |
@@ -25,13 +25,13 @@ Stack outputs: `northstar-pipeline`, `northstar-ci`,
 
 ## Two account-specific deviations
 
-1. **Training quota.** Applied spot quota is **0** for every CPU type
-   (`L-29688C85`: applied 0, AWS default 4). Request `CASE_OPENED` on
-   2026-10-29. Until it clears, `scripts/run_sagemaker_pipeline.sh` tries
-   `ml.m5.large` (fails fast on quota), then `ml.g6.2xlarge` (spot quota 1, and
-   it has capacity — three successful train+register runs), then further GPU
-   types. The ladder also abandons a job stuck in "Insufficient capacity"
-   after `STALL_SECONDS` (default 300). A real training error is never retried.
+1. **Training quota — RESOLVED 2026-10-30.** Applied spot quota was **0** for
+   every CPU type (`L-29688C85`: applied 0, AWS default 4); the request was
+   approved and now reads **4** (`CASE_CLOSED`). A forced `ml.m5.large` spot run
+   trained and registered **v7** (55 s billable).
+   `scripts/run_sagemaker_pipeline.sh` still tries `ml.m5.large` first and keeps
+   the GPU ladder only as capacity insurance; a real training error is never
+   retried. If a future account again shows 0, the ladder covers it.
 2. **Push trigger.** The CodeConnections GitHub webhook never delivered a push
    (no `WebhookV2` execution in 6+ minutes; manual executions download the same
    repo). `.github/workflows/trigger-pipeline.yml` starts CodePipeline over

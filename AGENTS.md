@@ -357,18 +357,21 @@ clean-looking report that had verified nothing. Keep that behaviour.
 
 ## 6b. Lab 4 CI/CD pipeline (2026-10-30)
 
-- **Applied spot training quota is 0, not 4.** `get-service-quota L-29688C85`
-  returns 0 while `get-aws-default-service-quota` returns 4; every CPU training
-  type is 0. The GPU families are the only ones with quota (1 spot instance
-  each). A quota-increase request is `CASE_OPENED`. Do not assume the handout's
-  "spot defaults to 4".
+- **Applied spot training quota WAS 0 for every CPU type; fixed 2026-10-30.**
+  `get-service-quota L-29688C85` read 0 while `get-aws-default-service-quota`
+  read 4, and every CPU training type was 0 (only GPU families had 1). The
+  quota-increase request was **approved** the same day: applied `L-29688C85` is
+  now **4**, request `CASE_CLOSED`, and a forced `ml.m5.large` spot run trained
+  and registered v7 (55 s billable). Do not re-derive this; if a future account
+  resets, the ladder still covers it.
 - **`scripts/run_sagemaker_pipeline.sh` is the training ladder.** It tries
-  `ml.m5.large` first (so the cheap type takes over when quota lands), then GPU
-  types, and falls through only on a quota/capacity failure. A 0-quota failure
-  happens inside `CreateTrainingJob`, so **no training job exists** — inspect the
-  *step* `FailureReason`, not a training job. Verified live: m5 quota failure →
-  g6.2xlarge trained + registered (v4-v6); g5.xlarge ICE → stopped after 60 s →
-  g6.2xlarge.
+  `ml.m5.large` first (now the working, cheapest rung), then GPU types, and falls
+  through only on a quota/capacity failure. GPU fallback is kept as capacity
+  insurance. A 0-quota failure happens inside `CreateTrainingJob`, so **no
+  training job exists** — inspect the *step* `FailureReason`, not a training
+  job. Verified live: m5 quota failure → g6.2xlarge trained + registered (v4-v6);
+  g5.xlarge ICE → stopped after 60 s → g6.2xlarge; after quota approval,
+  m5.large → v7.
 - **S3A writes a bucket-root `features_$folder$` marker.** Re-running the feature
   job failed with `AccessDenied` on `s3://.../features_$folder$` after computing
   every feature (old data survives; the write aborts first). The DataEngineer
